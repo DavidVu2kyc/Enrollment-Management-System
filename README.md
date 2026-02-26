@@ -118,5 +118,3 @@ Use **TestContainers** to spin up a PostgreSQL container during the `mvn verify`
 * [ ] Responsive UI built with Tailwind.
 
 ---
-
-**Would you like me to generate a starter `api-spec.yaml` (OpenAPI) for the Enrollment endpoints to get your backend generation started?**
