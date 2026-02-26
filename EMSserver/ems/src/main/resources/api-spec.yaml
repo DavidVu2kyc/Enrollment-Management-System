@@ -1,0 +1,704 @@
+openapi: 3.0.3
+info:
+  title: Orange and Bronze University — Enrollment Management System API
+  description: |
+    RESTful API for the OBU Enrollment Management System.
+    Provides authentication, student management, course/section management,
+    and student enrollment (enlistment) operations.
+  version: 1.0.0
+  contact:
+    name: OBU EMS Team
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: Login and registration endpoints
+  - name: Students
+    description: Student profile management
+  - name: Degrees
+    description: Degree and course catalog
+  - name: Terms
+    description: Academic term management
+  - name: Sections
+    description: Course sections opened per term
+  - name: Enrollments
+    description: Enlistment and enrollment management
+
+paths:
+  # ── Authentication ──────────────────────────────────────────
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user and receive JWT token
+      security: []
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new student account (ADMIN only)
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Student account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden — ADMIN only
+
+  # ── Students ────────────────────────────────────────────────
+  /api/students:
+    get:
+      tags: [Students]
+      summary: List all students (ADMIN only)
+      operationId: getAllStudents
+      parameters:
+        - name: degreeId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated student list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentPage'
+        '403':
+          description: Forbidden
+
+  /api/students/{id}:
+    get:
+      tags: [Students]
+      summary: Get student by ID (ADMIN or student themselves)
+      operationId: getStudentById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Student found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [Students]
+      summary: Update student profile (ADMIN or student themselves)
+      operationId: updateStudent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStudentRequest'
+      responses:
+        '200':
+          description: Updated student
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentResponse'
+        '404':
+          description: Not found
+
+  /api/students/me:
+    get:
+      tags: [Students]
+      summary: Get the currently authenticated student's profile
+      operationId: getMyProfile
+      responses:
+        '200':
+          description: Current student profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentResponse'
+
+  # ── Degrees ─────────────────────────────────────────────────
+  /api/degrees:
+    get:
+      tags: [Degrees]
+      summary: List all degrees
+      operationId: getAllDegrees
+      security: []
+      responses:
+        '200':
+          description: List of degrees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DegreeResponse'
+
+  /api/degrees/{id}/courses:
+    get:
+      tags: [Degrees]
+      summary: List courses for a degree
+      operationId: getCoursesByDegree
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Courses in this degree
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseResponse'
+
+  # ── Terms ───────────────────────────────────────────────────
+  /api/terms:
+    get:
+      tags: [Terms]
+      summary: List all terms
+      operationId: getAllTerms
+      security: []
+      responses:
+        '200':
+          description: List of terms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TermResponse'
+
+  /api/terms/active:
+    get:
+      tags: [Terms]
+      summary: Get the currently active term
+      operationId: getActiveTerm
+      security: []
+      responses:
+        '200':
+          description: Active term
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TermResponse'
+        '404':
+          description: No active term
+
+  # ── Sections ────────────────────────────────────────────────
+  /api/sections:
+    get:
+      tags: [Sections]
+      summary: List sections (optionally filtered by term)
+      operationId: getAllSections
+      parameters:
+        - name: termId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: courseId
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of sections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SectionResponse'
+
+  /api/sections/{id}:
+    get:
+      tags: [Sections]
+      summary: Get section details by ID
+      operationId: getSectionById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Section details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SectionResponse'
+        '404':
+          description: Not found
+
+  /api/sections/{id}/enrollments:
+    get:
+      tags: [Sections]
+      summary: List students enrolled in a section (ADMIN only)
+      operationId: getEnrollmentsBySection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Enrolled students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnrollmentResponse'
+        '403':
+          description: Forbidden
+
+  # ── Enrollments ─────────────────────────────────────────────
+  /api/enrollments:
+    post:
+      tags: [Enrollments]
+      summary: Enlist student in a section (STUDENT or ADMIN)
+      operationId: createEnrollment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentRequest'
+      responses:
+        '201':
+          description: Enrolled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentResponse'
+        '409':
+          description: Conflict — schedule overlap or section full
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Validation error
+
+  /api/enrollments/my:
+    get:
+      tags: [Enrollments]
+      summary: Get the current student's enrollment list (EAF)
+      operationId: getMyEnrollments
+      parameters:
+        - name: termId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/EnrollmentStatus'
+      responses:
+        '200':
+          description: Student enrollment list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnrollmentResponse'
+
+  /api/enrollments/{id}:
+    get:
+      tags: [Enrollments]
+      summary: Get enrollment by ID
+      operationId: getEnrollmentById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Enrollment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentResponse'
+        '404':
+          description: Not found
+
+    put:
+      tags: [Enrollments]
+      summary: Update enrollment status (ADMIN only)
+      operationId: updateEnrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEnrollmentRequest'
+      responses:
+        '200':
+          description: Updated enrollment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentResponse'
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+
+    delete:
+      tags: [Enrollments]
+      summary: Drop enrollment (student drops a section)
+      operationId: deleteEnrollment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Dropped successfully
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+
+# ── Schemas ──────────────────────────────────────────────────
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: student01
+        password:
+          type: string
+          format: password
+          example: mypassword
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        tokenType:
+          type: string
+          default: Bearer
+        username:
+          type: string
+        role:
+          type: string
+          enum: [STUDENT, ADMIN]
+
+    RegisterRequest:
+      type: object
+      required: [username, password, firstName, lastName, studentNumber, degreeId]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 100
+        password:
+          type: string
+          minLength: 6
+          format: password
+        firstName:
+          type: string
+        lastName:
+          type: string
+        studentNumber:
+          type: string
+        degreeId:
+          type: integer
+          format: int64
+
+    UpdateStudentRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        degreeId:
+          type: integer
+          format: int64
+
+    StudentResponse:
+      type: object
+      properties:
+        studentId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        studentNumber:
+          type: string
+        degree:
+          $ref: '#/components/schemas/DegreeResponse'
+
+    StudentPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentResponse'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        page:
+          type: integer
+
+    DegreeResponse:
+      type: object
+      properties:
+        degreeId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+
+    CourseResponse:
+      type: object
+      properties:
+        courseId:
+          type: integer
+          format: int64
+        code:
+          type: string
+        title:
+          type: string
+        units:
+          type: integer
+        degreeId:
+          type: integer
+          format: int64
+
+    TermResponse:
+      type: object
+      properties:
+        termId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        year:
+          type: integer
+        semester:
+          type: string
+          enum: [FIRST, SECOND, SUMMER]
+        isActive:
+          type: boolean
+
+    ScheduleResponse:
+      type: object
+      properties:
+        scheduleId:
+          type: integer
+          format: int64
+        dayOfWeek:
+          type: string
+          enum: [MON, TUE, WED, THU, FRI, SAT, SUN]
+        startTime:
+          type: string
+          format: time
+          example: "08:00:00"
+        endTime:
+          type: string
+          format: time
+          example: "09:30:00"
+
+    SectionResponse:
+      type: object
+      properties:
+        sectionId:
+          type: integer
+          format: int64
+        sectionCode:
+          type: string
+        course:
+          $ref: '#/components/schemas/CourseResponse'
+        term:
+          $ref: '#/components/schemas/TermResponse'
+        schedule:
+          $ref: '#/components/schemas/ScheduleResponse'
+        room:
+          type: object
+          properties:
+            roomId:
+              type: integer
+              format: int64
+            building:
+              type: string
+            roomNumber:
+              type: string
+        facultyName:
+          type: string
+        maxSeats:
+          type: integer
+        enrolledCount:
+          type: integer
+        availableSeats:
+          type: integer
+
+    EnrollmentStatus:
+      type: string
+      enum: [PENDING, ENROLLED, DROPPED, CANCELLED]
+
+    EnrollmentRequest:
+      type: object
+      required: [sectionId]
+      properties:
+        studentId:
+          type: integer
+          format: int64
+          description: For ADMIN enrolling on behalf of a student. If omitted, uses current user.
+        sectionId:
+          type: integer
+          format: int64
+
+    UpdateEnrollmentRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/EnrollmentStatus'
+
+    EnrollmentResponse:
+      type: object
+      properties:
+        enrollmentId:
+          type: integer
+          format: int64
+        student:
+          $ref: '#/components/schemas/StudentResponse'
+        section:
+          $ref: '#/components/schemas/SectionResponse'
+        status:
+          $ref: '#/components/schemas/EnrollmentStatus'
+        enrolledAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
