@@ -13,7 +13,7 @@ import java.util.List;
 public class TermDegreeController {
 
     // private final TermService termService;
-    // private final DegreeService degreeService;
+    private final DegreeService degreeService;
 
     // @GetMapping("/api/terms")
     // public ResponseEntity<List<TermResponse>> getAllTerms() {
@@ -25,13 +25,13 @@ public class TermDegreeController {
     //     return ResponseEntity.ok(termService.getActiveTerm());
     // }
 
-    // @GetMapping("/api/degrees")
-    // public ResponseEntity<List<DegreeResponse>> getAllDegrees() {
-    //     return ResponseEntity.ok(degreeService.getAll());
-    // }
+    @GetMapping("/api/degrees")
+    public ResponseEntity<List<DegreeResponse>> getAllDegrees() {
+        return ResponseEntity.ok(degreeService.getAll());
+    }
 
     // @GetMapping("/api/degrees/{id}/courses")
-    // public ResponseEntity<List<CourseResponse>> getCoursesByDegree(@PathVariable Long id) {
+    // public ResponseEntity<List<CourseResponse>> getCoursesByDegree(@PathVariable Long (@PathVariable Long id)id) {
     //     return ResponseEntity.ok(degreeService.getCoursesByDegree(id));
     // }
 }
