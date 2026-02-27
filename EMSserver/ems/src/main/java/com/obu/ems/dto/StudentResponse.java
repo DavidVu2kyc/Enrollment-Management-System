@@ -1,5 +1,7 @@
 package com.obu.ems.dto;
 
+import com.obu.ems.model.Degree;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,5 +14,6 @@ public class StudentResponse {
     private String firstName;
     private String lastName;
     private String studentNumber;
-    private DegreeResponse degree;
+    private DegreeResponse degree ;
+
 }
