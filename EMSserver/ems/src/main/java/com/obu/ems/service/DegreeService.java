@@ -2,6 +2,8 @@ package com.obu.ems.service;
 
 import com.obu.ems.dto.CourseResponse;
 import com.obu.ems.dto.DegreeResponse;
+import com.obu.ems.exception.ResourceNotFoundException;
+import com.obu.ems.model.Course;
 import com.obu.ems.model.Degree;
 import com.obu.ems.repository.CourseRepository;
 import com.obu.ems.repository.DegreeRepository;
@@ -16,7 +18,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DegreeService {
 
-private final DegreeRepository degreeRepository;
+    private final DegreeRepository degreeRepository;
     private final CourseRepository courseRepository ;
 
     //degree -> degreeResponse mapper ( private )
@@ -29,19 +31,17 @@ private final DegreeRepository degreeRepository;
     }
 
     public CourseResponse maptoCourseResponse(Degree degree) {
-        List<CourseResponse> courses = courseRepository.findByDegreeId(degree.getDegreeId())
+        List<CourseResponse> courses = courseRepository.findByDegree_DegreeId(degree.getDegreeId())
                 .stream()
                 .map(course -> CourseResponse.builder()
                         .courseId(course.getCourseId())
-                        .name(course.getName())
-                        .description(course.getDescription())
+                        .title(course.getTitle())
                         .build())
                 .collect(Collectors.toList());
 
         return CourseResponse.builder()
                 .courseId(degree.getDegreeId()) // Assuming you want to set the degree ID here
-                .name(degree.getName()) // Assuming you want to set the degree name here
-                .description(degree.getDescription()) // Assuming you want to set the degree description here
+                .title(degree.getName()) // Assuming you want to set the degree name here
                 .build();
     }
 
@@ -56,16 +56,28 @@ private final DegreeRepository degreeRepository;
 
    }
 
+    private CourseResponse mapToCourseResponse(Course course) {
+        return CourseResponse.builder()
+                .courseId(course.getCourseId())
+                .title(course.getTitle())
+                .units(course.getUnits())
+                .build();
+    }
+
     //  list courses for a degree
     public List<CourseResponse> getCoursesByDegree( Long degreeId) 
         {
             // validate degree exists 
-            Degree degree = degreeRepository.findById(degreeId)
-                    .orElseThrow(() -> new RuntimeException("Degree not found with id: " + degreeId));
-            // fetch courses for the given degree 
+            Degree degree = degreeRepository.findByDegree_degreeId(degreeId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Degree not found with id: " + degreeId));
 
+            // Check if the degree is still active ( optional )
+            // fetch courses for the given degree
+            List<Course> courses = courseRepository.findByDegree_DegreeId(degreeId);
 
-            return mapToResponse(degree);
+            // Map to Response
+            return courses.stream().map(this::mapToCourseResponse).toList();
+
         }
 
 }
