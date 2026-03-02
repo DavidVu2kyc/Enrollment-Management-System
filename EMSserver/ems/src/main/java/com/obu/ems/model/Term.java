@@ -25,7 +25,7 @@ public class Term {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Semester semester;
+    private Semester semester; //FIRST
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = false;

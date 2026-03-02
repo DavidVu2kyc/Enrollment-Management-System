@@ -1,5 +1,9 @@
 package com.obu.ems.model;
 
+import com.obu.ems.dto.CourseResponse;
+import com.obu.ems.dto.ScheduleResponse;
+import com.obu.ems.dto.SectionResponse;
+import com.obu.ems.dto.TermResponse;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,14 +23,17 @@ public class Section {
 
     @Column(name = "section_code", nullable = false, length = 20)
     private String sectionCode;
+    private SectionResponse sectionResponse ;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
+    private CourseResponse courseResponse;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "term_id", nullable = false)
     private Term term;
+    private TermResponse termResponse;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
@@ -35,6 +42,7 @@ public class Section {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
     private Schedule schedule;
+    private ScheduleResponse scheduleResponse;
 
     @Column(name = "faculty_name", length = 200)
     private String facultyName;
