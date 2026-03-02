@@ -14,15 +14,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SectionController {
 
-    // private final SectionService sectionService;
+     private final SectionService sectionService;
     // private final EnrollmentService enrollmentService;
 
-    // @GetMapping
-    // public ResponseEntity<List<SectionResponse>> getAll(
-    //         @RequestParam(required = false) Long termId,
-    //         @RequestParam(required = false) Long courseId) {
-    //     return ResponseEntity.ok(sectionService.getAll(termId, courseId));
-    // }
+     @GetMapping
+     public ResponseEntity<List<SectionResponse>> getAll(
+             @RequestParam(required = false) Long termId,
+             @RequestParam(required = false) Long courseId) {
+         return ResponseEntity.ok(sectionService.getAll(termId, courseId));
+     }
 
     // @GetMapping("/{id}")
     // public ResponseEntity<SectionResponse> getById(@PathVariable Long id) {
