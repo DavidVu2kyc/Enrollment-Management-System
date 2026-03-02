@@ -12,18 +12,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TermDegreeController {
 
-    // private final TermService termService;
+     private final TermService termService;
     private final DegreeService degreeService;
 
-    // @GetMapping("/api/terms")
-    // public ResponseEntity<List<TermResponse>> getAllTerms() {
-    //     return ResponseEntity.ok(termService.getAll());
-    // }
+     @GetMapping("/api/terms")
+     public ResponseEntity<List<TermResponse>> getAllTerms() {
+         return ResponseEntity.ok(termService.getAll());
+     }
 
-    // @GetMapping("/api/terms/active")
-    // public ResponseEntity<TermResponse> getActiveTerm() {
-    //     return ResponseEntity.ok(termService.getActiveTerm());
-    // }
+     @GetMapping("/api/terms/active")
+     public ResponseEntity<TermResponse> getActiveTerm() {
+         return ResponseEntity.ok(termService.getActiveTerm());
+     }
 
     //    List all degrees
     @GetMapping("/api/degrees")
