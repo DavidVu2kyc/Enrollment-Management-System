@@ -17,31 +17,26 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class StudentController {
 
-    // private final StudentService studentService;
-    // private final UserRepository userRepository;
+     private final StudentService studentService;
+     private final UserRepository userRepository;
 
-    // @GetMapping
-    // public ResponseEntity<Page<StudentResponse>> getAll(
-    //         @RequestParam(required = false) Long degreeId,
-    //         @RequestParam(defaultValue = "0") int page,
-    //         @RequestParam(defaultValue = "20") int size) {
-    //     return ResponseEntity.ok(studentService.getAll(degreeId, PageRequest.of(page, size)));
-    // }
+     @GetMapping
+     public ResponseEntity<Page<StudentResponse>> getAll(
+             @RequestParam(required = false) Long degreeId,
+             @RequestParam(defaultValue = "0") int page,
+             @RequestParam(defaultValue = "20") int size) {
+         return ResponseEntity.ok(studentService.getAll(degreeId, PageRequest.of(page, size)));
+     }
 
-    // @GetMapping("/me")
-    // public ResponseEntity<StudentResponse> getMe(@AuthenticationPrincipal UserDetails userDetails) {
-    //     User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
-    //     return ResponseEntity.ok(studentService.getByUserId(user.getUserId()));
-    // }
+     @GetMapping("/me")
+     public ResponseEntity<StudentResponse> getMe(@AuthenticationPrincipal UserDetails userDetails) {
+         User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+         return ResponseEntity.ok(studentService.getByUserId(user.getUserId()));
+     }
 
-    // @GetMapping("/{id}")
-    // public ResponseEntity<StudentResponse> getById(@PathVariable Long id) {
-    //     return ResponseEntity.ok(studentService.getById(id));
-    // }
-
-    // @PutMapping("/{id}")
-    // public ResponseEntity<StudentResponse> update(@PathVariable Long id,
-    //                                               @Valid @RequestBody UpdateStudentRequest request) {
-    //     return ResponseEntity.ok(studentService.update(id, request));
-    // }
+     @PutMapping("/{id}")
+     public ResponseEntity<StudentResponse> update(@PathVariable Long id,
+                                                   @Valid @RequestBody UpdateStudentRequest request) {
+         return ResponseEntity.ok(studentService.updateStudentRequest(id, request));
+     }
 }

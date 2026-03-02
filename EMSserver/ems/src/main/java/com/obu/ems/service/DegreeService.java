@@ -77,7 +77,6 @@ public class DegreeService {
 
             // Map to Response
             return courses.stream().map(this::mapToCourseResponse).toList();
-
         }
 
 }
