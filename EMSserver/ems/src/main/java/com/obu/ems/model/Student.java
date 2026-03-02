@@ -27,11 +27,11 @@ public class Student {
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
 
-        @Column(name = "last_name", nullable = false, length = 100)
-        private String lastName;
+    @Column(name = "last_name", nullable = false, length = 100)
+    private String lastName;
 
-        @Column(name = "student_number", nullable = false, unique = true, length = 20)
-        private String studentNumber;
+    @Column(name = "student_number", nullable = false, unique = true, length = 20)
+    private String studentNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "degree_id", nullable = false)
