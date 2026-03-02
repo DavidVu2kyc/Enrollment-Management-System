@@ -2,7 +2,6 @@ package com.obu.ems.controller;
 
 import com.obu.ems.dto.*;
 import com.obu.ems.service.SectionService;
-import com.obu.ems.service.EnrollmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,22 +14,24 @@ import java.util.List;
 public class SectionController {
 
      private final SectionService sectionService;
-    // private final EnrollmentService enrollmentService;
 
+     // list all sections
      @GetMapping
      public ResponseEntity<List<SectionResponse>> getAll(
-             @RequestParam(required = false) Long termId,
-             @RequestParam(required = false) Long courseId) {
-         return ResponseEntity.ok(sectionService.getAll(termId, courseId));
+               @RequestParam(required = false) Long courseId,
+               @RequestParam(required = false) Long termId) {
+          return ResponseEntity.ok(sectionService.getAll(courseId, termId));
      }
 
-    // @GetMapping("/{id}")
-    // public ResponseEntity<SectionResponse> getById(@PathVariable Long id) {
-    //     return ResponseEntity.ok(sectionService.getById(id));
-    // }
+     // get section details by sectionId
+     @GetMapping("/{sectionId}")
+     public ResponseEntity<SectionResponse> getById(@PathVariable Long sectionId) {
+          return ResponseEntity.ok(sectionService.getById(sectionId));
+     }
 
-    // @GetMapping("/{id}/enrollments")
-    // public ResponseEntity<List<EnrollmentResponse>> getEnrollments(@PathVariable Long id) {
-    //     return ResponseEntity.ok(enrollmentService.getEnrollmentsBySection(id));
-    // }
+     // get enrollment list of students in a section
+     @GetMapping("/{sectionId}/enrollments")
+     public ResponseEntity<List<EnrollmentResponse>> getEnrollments(@PathVariable Long sectionId) {
+          return ResponseEntity.ok(sectionService.getEnrollmentsBySection(sectionId));
+     }
 }

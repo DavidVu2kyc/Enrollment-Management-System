@@ -23,17 +23,18 @@ public class Section {
 
     @Column(name = "section_code", nullable = false, length = 20)
     private String sectionCode;
-    private SectionResponse sectionResponse ;
+
+//    private SectionResponse sectionResponse ;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
-    private CourseResponse courseResponse;
+//    private CourseResponse courseResponse;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "term_id", nullable = false)
     private Term term;
-    private TermResponse termResponse;
+//    private TermResponse termResponse;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
@@ -42,7 +43,7 @@ public class Section {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
     private Schedule schedule;
-    private ScheduleResponse scheduleResponse;
+//    private ScheduleResponse scheduleResponse;
 
     @Column(name = "faculty_name", length = 200)
     private String facultyName;
