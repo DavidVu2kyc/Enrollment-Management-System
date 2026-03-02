@@ -1,10 +1,17 @@
 package com.obu.ems.service;
 
-import com.obu.ems.dto.EnrollmentResponse;
-import com.obu.ems.dto.SectionResponse;
+import com.obu.ems.dto.*;
+import com.obu.ems.mapper.EnrollmentMapper;
+import com.obu.ems.mapper.SectionMapper;
+import com.obu.ems.model.Enrollment;
 import com.obu.ems.model.Section;
+import com.obu.ems.repository.EnrollmentRepository;
 import com.obu.ems.repository.SectionRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,55 +20,46 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SectionService {
 
-    private SectionRepository sectionRepository;
+        private final SectionRepository sectionRepository;
+        private final EnrollmentRepository enrollmentRepository;
+        private final SectionMapper sectionMapper;
+        private final EnrollmentMapper enrollmentMapper;
 
-    //    map to SectionResponse
-    public SectionResponse mapToSectionResponse(Section section) {
-        return SectionResponse.builder()
-                .sectionId(section.getSectionId())
-                .sectionCode(section.getSectionCode())
-                .course(section.getCourseResponse())
-                .term(section.getTermResponse())
-                .schedule(section.getScheduleResponse())
-                .room(section.getSectionResponse().getRoom())
-                .build();
+        // list sections
+        public List<SectionResponse> getAll(Long courseId, Long termId) {
+                List<Section> sections = sectionRepository.findByCourse_CourseIdAndTerm_TermId(courseId, termId);
+                return sections.stream().map(sectionMapper::mapToSectionResponse).toList();
+        }
 
-    }
+        // get section details by id
+        public SectionResponse getById(Long sectionId) {
+                Section sectionDetails = sectionRepository.findBy_sectionId(sectionId);
+                if (sectionDetails == null) {
+                        throw new EntityNotFoundException("Section not found with id: " + sectionId);
+                }
+                return sectionMapper.mapToSectionResponse(sectionDetails);
+        }
 
-    public SectionResponse mapToSectionResponseDetails(Section section )
-    {
-        return SectionResponse.builder()
-                .sectionId(section.getSectionId())
-                .sectionCode(section.getSectionCode())
-                .course(section.getCourseResponse())
-                .term(section.getTermResponse())
-                .schedule(section.getScheduleResponse())
-                .room(section.getSectionResponse().getRoom())
-                .facultyName(section.getFacultyName())
-                .maxSeats(section.getSectionResponse().getMaxSeats())
-                .enrolledCount(section.getSectionResponse().getEnrolledCount())
-                .build();
+        // A list of students enrolled in a section - admin permission only
+        public List<EnrollmentResponse> getEnrollmentsBySection(Long sectionId) {
+                // admin permission check
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    }
+                boolean isAdmin = authentication.getAuthorities()
+                                .stream().anyMatch(role -> role.getAuthority().equals("ROLE_ADMIN"));
 
-    //    list sections
-    public List<SectionResponse> getAll(Long courseId, Long termId){
-        List<Section> section  = sectionRepository.findByCourse_CourseIdAndTerm_TermId( courseId, termId);
-        return section.stream().map(this::mapToSectionResponse).toList();
+                if (!isAdmin) {
+                        throw new AccessDeniedException("You are not allowed to view this resource");
+                }
+                // Entity mapping (section repo )
+                List<Enrollment> enrollments = enrollmentRepository.findBySection_SectionId(sectionId);
 
-    }
+                if (enrollments.isEmpty()) {
+                        throw new EntityNotFoundException("No Enrollments found for the given sectionId: " + sectionId);
+                }
 
-    //   get section details by id
-    public SectionResponse getById(Long sectionId)
-    {
-        Section sectionDetails = sectionRepository.findBy_sectionId(sectionId);
-        return mapToSectionResponse(sectionDetails);
-    }
-
-    //    list students enrolled in a section
-    public  List<EnrollmentResponse> getEnrollmentsBySection(Long sectionId){
-
-    }
-
-
+                return enrollments.stream()
+                                .map(enrollmentMapper::mapToEnrollmentResponse)
+                                .toList();
+        }
 }

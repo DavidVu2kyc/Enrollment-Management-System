@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/enrollments")
 @RequiredArgsConstructor
-public class EnrollmentController {
+public class `EnrollmentController {
 
     // private final EnrollmentService enrollmentService;
     // private final UserRepository userRepository;
@@ -73,4 +73,6 @@ public class EnrollmentController {
     //     enrollmentService.drop(id, studentId, isAdmin);
     //     return ResponseEntity.noContent().build();
     // }
+
+
 }

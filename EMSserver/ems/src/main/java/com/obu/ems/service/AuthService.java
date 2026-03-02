@@ -27,11 +27,11 @@ public class AuthService {
     private final StudentRepository studentRepository;
     private final DegreeRepository degreeRepository;
 
-        // login ( authenticate user and receive JWT token )
+    // login ( authenticate user and receive JWT token )
     public AuthResponse login(LoginRequest request) {
 
         // use authentication manager to authen username and password
-        Authentication authentication =  authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())) ;
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
         // generate JWT token
         String jwtToken = jwtTokenProvider.generateToken(authentication);
@@ -47,19 +47,20 @@ public class AuthService {
         return response;
 
     }
-//    register new account - a new pròile ( admin only )
+
+    //    register new account - a new pròile ( admin only )
     public StudentResponse register(RegisterRequest request) {
 //        validate username
-        if(userRepository.existsByUsername(request.getUsername()) ) {
+        if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("username already taken");
         }
 
 //        validate student number uniqueness
-        if(studentRepository.existsByStudentNumber(request.getStudentNumber())) {
+        if (studentRepository.existsByStudentNumber(request.getStudentNumber())) {
             throw new IllegalArgumentException("student number already taken");
         }
 
-        Degree degree =degreeRepository.findById(request.getDegreeId())
+        Degree degree = degreeRepository.findById(request.getDegreeId())
                 .orElseThrow(() -> new IllegalArgumentException("invalid degree id"));
 
         // create new user entity

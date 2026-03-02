@@ -28,7 +28,7 @@ public class Term {
     private Semester semester; //FIRST
 
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = false;
+    public Boolean isActive = false;
 
     public enum Semester {
         FIRST, SECOND, SUMMER
