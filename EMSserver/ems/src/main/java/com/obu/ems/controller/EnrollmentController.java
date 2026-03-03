@@ -19,49 +19,37 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/enrollments")
 @RequiredArgsConstructor
-public class eEnrollmentController {
+public class EnrollmentController {
 
-     private final EnrollmentService enrollmentService;
+    private final EnrollmentService enrollmentService;
 
+    @PostMapping
+    public ResponseEntity<EnrollmentResponse> create(@Valid @RequestBody EnrollmentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(enrollmentService.enlistStudent(request.getStudentId(), request));
+    }
 
-     @PostMapping
-     public ResponseEntity<EnrollmentResponse> create(@Valid @RequestBody EnrollmentRequest request) {
+    @GetMapping("/my/{studentId}")
+    public ResponseEntity<List<EnrollmentResponse>> getMyEnrollments(
+            @PathVariable Long studentId,
+            @RequestParam Long termId) {
+        return ResponseEntity.ok(enrollmentService.getMyEnrollments(studentId, termId));
+    }
 
-         return ResponseEntity.status(HttpStatus.CREATED)
-                 .body(enrollmentService.enlistStudent(request.getStudentId(), request));
-     }
+    @GetMapping("/{id}")
+    public ResponseEntity<EnrollmentResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(enrollmentService.getById(id));
+    }
 
-     @GetMapping("/my")
-     public ResponseEntity<List<EnrollmentResponse>> getMyEnrollments(
-             @AuthenticationPrincipal UserDetails userDetails,
-             @RequestParam(required = false) Long termId,
-             @Valid @RequestBody  EnrollmentRequest  enrollmentRequest) {
+    @PutMapping("/{id}/status")
+    public ResponseEntity<EnrollmentResponse> updateStatus(@PathVariable Long id,
+            @Valid @RequestBody UpdateEnrollmentRequest request) {
+        return ResponseEntity.ok(enrollmentService.updateStatus(id, request));
+    }
 
-         return ResponseEntity.ok(enrollmentService.getMyEnrollments(termId, enrollmentRequest));
-     }
-
-     @GetMapping("/{id}")
-     public ResponseEntity<EnrollmentResponse> getById(@PathVariable Long id) {
-         return ResponseEntity.ok(enrollmentService.getById(id));
-     }
-
-     @PutMapping("/{id}")
-     public ResponseEntity<EnrollmentResponse> updateStatus(@PathVariable Long id,
-                                                            @Valid @RequestBody EnrollmentRequest enrollmentRequest,
-                                                            @Valid @RequestBody UpdateEnrollmentRequest request) {
-
-         return ResponseEntity.ok(enrollmentService.updateStatus(id,enrollmentRequest, request));
-     }
-
-     @DeleteMapping("/{studentId}")
-     public ResponseEntity<Void> drop(@PathVariable Long studentId , @Valid @RequestBody EnrollmentRequest request) {
-         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Boolean isAdmin =  authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-
-         enrollmentService.drop(studentId,isAdmin,request);
-
-         return ResponseEntity.noContent().build();
-     }
-
-
+    @DeleteMapping("/{enrollmentId}")
+    public ResponseEntity<EnrollmentResponse> drop(@PathVariable Long enrollmentId,
+            @RequestParam Long studentId) {
+        return ResponseEntity.ok(enrollmentService.drop(studentId, enrollmentId));
+    }
 }

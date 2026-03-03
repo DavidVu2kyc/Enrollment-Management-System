@@ -39,15 +39,18 @@ public class JwtTokenProvider {
                 .expiration(expiryDate)
                 .signWith(key)
                 .compact();
+
     }
 
     public String getUsernameFromJWT(String token) {
+
         return Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+
     }
 
     public boolean validateToken(String authToken) {
