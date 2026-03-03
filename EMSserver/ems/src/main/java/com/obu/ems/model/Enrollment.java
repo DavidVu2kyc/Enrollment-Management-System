@@ -42,6 +42,6 @@ public class Enrollment {
     }
 
     public enum Status {
-        PENDING, ENROLLED, DROPPED, CANCELLED
+            PENDING, ENROLLED, DROPPED, CANCELLED
     }
 }

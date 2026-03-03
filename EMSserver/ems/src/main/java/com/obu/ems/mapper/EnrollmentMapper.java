@@ -20,7 +20,7 @@ public class EnrollmentMapper {
                 .enrollmentId(enrollment.getEnrollmentId())
                 .student(studentMapper.mapToStudentResponse(enrollment.getStudent()))
                 .section(sectionMapper.mapToSectionResponse(enrollment.getSection()))
-                .status(enrollment.getStatus() != null ? enrollment.getStatus().name() : null)
+                .status(enrollment.getStatus() !=    null ? enrollment.getStatus().name() : null)
                 .enrolledAt(enrollment.getEnrolledAt())
                 .build();
     }
