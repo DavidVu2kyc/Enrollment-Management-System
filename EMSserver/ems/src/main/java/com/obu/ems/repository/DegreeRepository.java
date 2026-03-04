@@ -9,5 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DegreeRepository extends JpaRepository<Degree, Long> {
 
-    Optional<Degree> findByDegree_degreeId (Long degreeId);
+    Optional<Degree> findByDegreeId (Long degreeId);
 }

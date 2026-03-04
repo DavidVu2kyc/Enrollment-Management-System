@@ -15,7 +15,7 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
     List<Section> findByTerm_TermId(Long termId);
     List<Section> findByCourse_CourseIdAndTerm_TermId(Long courseId, Long termId);
     List<Section> findByCourse_CourseId(Long courseId);
-    Section findBy_sectionId(Long sectionId);
+    Section findBySectionId(Long sectionId);
     /**
      * Finds all sections a student is actively enrolled in for a given term,
      * used to check for schedule conflicts before enlisting.

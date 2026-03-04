@@ -9,6 +9,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import com.obu.ems.model.User;
+import com.obu.ems.repository.UserRepository;
+import com.obu.ems.security.JwtTokenProvider;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpHeaders;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -28,7 +33,7 @@ public abstract class BaseIntegrationTest {
         postgres.start();
     }
 
-    // connecting spirngboot and container 
+    // connecting spirngboot and container
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -39,5 +44,39 @@ public abstract class BaseIntegrationTest {
         registry.add("spring.flyway.password", postgres::getPassword);
         registry.add("spring.flyway.enabled", () -> "true");
     }
+
+    protected MockMvc getMockMvc() {
+        return mockMvc;
+    }
+
+    @Autowired
+    protected UserRepository userRepository;
+
+    @Autowired
+    protected JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    protected PasswordEncoder passwordEncoder;
+
+    protected User createTestUser(String username, String password, User.Role role) {
+        User user = User.builder()
+                .username(username)
+                .passwordHash(passwordEncoder.encode(password))
+                .role(role)
+                .build();
+        return userRepository.save(user);
+    }
+
+    protected String getJwtToken(String username) {
+        return jwtTokenProvider.generateTokenFromUsername(username);
+    }
+
+    protected HttpHeaders authenticatedHeaders(String username) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(getJwtToken(username));
+        return headers;
+    }
+
+    //
 
 }

@@ -33,7 +33,7 @@ public class SectionService {
 
         // get section details by id
         public SectionResponse getById(Long sectionId) {
-                Section sectionDetails = sectionRepository.findBy_sectionId(sectionId);
+                Section sectionDetails = sectionRepository.findBySectionId(sectionId);
                 if (sectionDetails == null) {
                         throw new EntityNotFoundException("Section not found with id: " + sectionId);
                 }
