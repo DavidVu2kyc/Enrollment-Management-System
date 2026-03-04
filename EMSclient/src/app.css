@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-navy: #05101f;
+    --brand-blue: #1e4db7;
+    --brand-accent: #60a5fa;
+  }
+
+  body {
+    @apply antialiased bg-gray-50 text-gray-900 dark:bg-[#05101f] dark:text-gray-100;
+    font-family: "DM Sans", system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  .serif {
+    font-family: "DM Serif Display", serif;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+.dark::-webkit-scrollbar-thumb {
+  @apply bg-white/10;
+}
+
+.dark::-webkit-scrollbar-thumb:hover {
+  @apply bg-white/20;
+}
+
+/* Glassmorphism Classes */
+.glass {
+  @apply backdrop-blur-xl bg-white/70 dark:bg-[#0c1c37]/80 border border-white/20 dark:border-white/10 shadow-2xl;
+}
+
+.glass-dark {
+  @apply backdrop-blur-xl bg-[#0c1c37]/90 border border-white/10 shadow-2xl;
+}
+
+/* Premium Transitions */
+.premium-transition {
+  @apply transition-all duration-300 cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Focus styles */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-[#05101f];
+}
