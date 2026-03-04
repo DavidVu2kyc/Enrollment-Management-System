@@ -68,7 +68,7 @@ public class DegreeService {
     public List<CourseResponse> getCoursesByDegree( Long degreeId) 
         {
             // validate degree exists 
-            Degree degree = degreeRepository.findByDegree_degreeId(degreeId)
+            Degree degree = degreeRepository.findByDegreeId(degreeId)
                     .orElseThrow(() -> new ResourceNotFoundException("Degree not found with id: " + degreeId));
 
             // Check if the degree is still active ( optional )

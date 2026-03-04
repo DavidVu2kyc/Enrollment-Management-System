@@ -16,6 +16,9 @@ public class EnrollmentResponse {
     private String status;
     private LocalDateTime enrolledAt;
 
+    private String message;
+
     public EnrollmentResponse(String message) {
+        this.message = message;
     }
 }

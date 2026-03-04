@@ -12,8 +12,8 @@ import java.util.Optional;
 public interface StudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByUser_UserId(Long userId);
-    boolean existsByStudentfirstName( String firstName);
-    boolean  existsByStudentlastName( String lastName);
+    boolean existsByFirstName( String firstName);
+    boolean  existsByLastName( String lastName);
     boolean existsByStudentNumber(String studentNumber);
     Page<Student> findByDegree_DegreeId(Long degreeId, Pageable pageable);
 
