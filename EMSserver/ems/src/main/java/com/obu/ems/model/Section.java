@@ -1,5 +1,9 @@
 package com.obu.ems.model;
 
+import com.obu.ems.dto.CourseResponse;
+import com.obu.ems.dto.ScheduleResponse;
+import com.obu.ems.dto.SectionResponse;
+import com.obu.ems.dto.TermResponse;
 import jakarta.persistence.*;
 import lombok.*;
 

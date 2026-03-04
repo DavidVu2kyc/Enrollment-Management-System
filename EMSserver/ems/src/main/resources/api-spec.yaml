@@ -258,7 +258,7 @@ paths:
 
   # ── Sections ────────────────────────────────────────────────
   /api/sections:
-    get:
+     get:
       tags: [Sections]
       summary: List sections (optionally filtered by term)
       operationId: getAllSections

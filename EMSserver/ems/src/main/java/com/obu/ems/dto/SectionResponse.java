@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class SectionResponse {
+public class    SectionResponse {
     private Long sectionId;
     private String sectionCode;
     private CourseResponse course;

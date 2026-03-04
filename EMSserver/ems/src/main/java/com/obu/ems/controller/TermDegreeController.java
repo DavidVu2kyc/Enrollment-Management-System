@@ -12,26 +12,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TermDegreeController {
 
-    // private final TermService termService;
-    // private final DegreeService degreeService;
+     private final TermService termService;
+    private final DegreeService degreeService;
 
-    // @GetMapping("/api/terms")
-    // public ResponseEntity<List<TermResponse>> getAllTerms() {
-    //     return ResponseEntity.ok(termService.getAll());
-    // }
+     @GetMapping("/api/terms")
+     public ResponseEntity<List<TermResponse>> getAllTerms() {
+         return ResponseEntity.ok(termService.getAll());
+     }
 
-    // @GetMapping("/api/terms/active")
-    // public ResponseEntity<TermResponse> getActiveTerm() {
-    //     return ResponseEntity.ok(termService.getActiveTerm());
-    // }
+     @GetMapping("/api/terms/active")
+     public ResponseEntity<TermResponse> getActiveTerm() {
+         return ResponseEntity.ok(termService.getActiveTerm());
+     }
 
-    // @GetMapping("/api/degrees")
-    // public ResponseEntity<List<DegreeResponse>> getAllDegrees() {
-    //     return ResponseEntity.ok(degreeService.getAll());
-    // }
+    //    List all degrees
+    @GetMapping("/api/degrees")
+    public ResponseEntity<List<DegreeResponse>> getAllDegrees() {
+        return ResponseEntity.ok(degreeService.getAll());
+    }
 
-    // @GetMapping("/api/degrees/{id}/courses")
-    // public ResponseEntity<List<CourseResponse>> getCoursesByDegree(@PathVariable Long id) {
-    //     return ResponseEntity.ok(degreeService.getCoursesByDegree(id));
-    // }
+    //    Get courses by id
+     @GetMapping("/api/degrees/{id}/courses")
+     public ResponseEntity<List<CourseResponse>> getCoursesByDegree(@PathVariable Long id) {
+         return ResponseEntity.ok(degreeService.getCoursesByDegree(id));
+     }
 }
