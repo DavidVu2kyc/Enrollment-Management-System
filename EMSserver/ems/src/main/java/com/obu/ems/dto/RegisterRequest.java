@@ -1,9 +1,11 @@
 package com.obu.ems.dto;
 
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class RegisterRequest {
     @NotBlank @Size(min = 3, max = 100)
     private String username;

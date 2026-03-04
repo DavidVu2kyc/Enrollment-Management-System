@@ -18,18 +18,21 @@ import org.springframework.http.HttpHeaders;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @AutoConfigureMockMvc
-public abstract class BaseIntegrationTest {
+public abstract class   BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Container
     protected static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("ems_local")
+            .withDatabaseName("postgres")
             .withUsername("postgres")
-            .withPassword("strongpassword");
+            .withPassword("mysecretpassword");
 
     static {
+            // Add this before any Testcontainer initialization
+        System.setProperty("docker.host", "unix:///Users/David/.docker/run/docker.sock");
+        System.setProperty("DOCKER_HOST", "unix:///Users/David/.docker/run/docker.sock");
         postgres.start();
     }
 
