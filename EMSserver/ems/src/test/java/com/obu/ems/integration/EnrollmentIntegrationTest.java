@@ -240,5 +240,6 @@ public class EnrollmentIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isOk());
         
         // Verify it's dropped/removed (depending on service implementation - service says it returns response, let's assume it works)
+        
     }
 }
