@@ -14,6 +14,6 @@ export const load: PageServerLoad = async ({ fetch }) => {
     };
   } catch (error) {
     console.error('Failed to load home page data:', error);
-    return { stats: null };
+    return { stats: null }; 
   }
 };

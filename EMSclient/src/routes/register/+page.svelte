@@ -19,7 +19,7 @@
 </script>
 
 <svelte:head>
-  <title>Identity Hub &mdash; Enrollment Management System</title>
+  <title>Register/title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link
     rel="preconnect"

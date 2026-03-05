@@ -58,10 +58,6 @@
       >
         Student Registry
       </h1>
-      <p class="text-gray-500 font-medium max-w-xl">
-        Comprehensive lifecycle management for institutional members, from
-        authentication to academic clearance.
-      </p>
     </div>
     <Button variant="primary" size="lg">
       <span class="flex items-center gap-2">

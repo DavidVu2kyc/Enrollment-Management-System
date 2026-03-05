@@ -1,3 +1,5 @@
+<!-- HOMEPAGE (ENROLLMENT LIST ) -->
+
 <script lang="ts">
   import { onMount } from "svelte";
   import { userStore } from "$lib/stores/user.svelte";
@@ -6,6 +8,7 @@
   import EnrollmentList from "$lib/components/EnrollmentList.svelte";
 
   let isLoading = $state(true);
+  
   let dashboardStats = $state({
     enrolledUnits: 0,
     activeCourses: 0,
