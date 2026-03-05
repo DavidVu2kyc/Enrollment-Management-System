@@ -1,109 +1,60 @@
 import { fail, redirect } from '@sveltejs/kit';
-import type { Actions } from './$types';
+import { superValidate } from 'sveltekit-superforms';
+import { yup } from 'sveltekit-superforms/adapters';
+import { loginSchema } from '$lib/schemas/login.schema';
+import type { PageServerLoad, Actions } from './$types';
+import { createServerApiClient } from '$lib/api/client';
 
-const API_BASE = process.env.VITE_API_URL || 'http://localhost:8080/api';
+export const load: PageServerLoad = async () => {
+	const form = await superValidate(yup(loginSchema));
+	return { form };
+};
 
 export const actions: Actions = {
 	login: async ({ request, cookies }) => {
-		const data = await request.formData();
-		const email = data.get('email') as string;
-		const password = data.get('password') as string;
+		const form = await superValidate(request, yup(loginSchema));
 
-		if (!email || !password) {
-			return fail(400, { email, error: 'Email and password are required' });
+		if (!form.valid) {
+			return fail(400, { form });
 		}
 
-		/* 
-		// TEMPORARILY DISABLED FOR BYPASS
+		const { username, password } = form.data;
+
 		try {
-			const response = await fetch(`${API_BASE}/auth/login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ email, password })
+			const client = createServerApiClient(null, fetch); // Pass the SvelteKit fetch
+			const response = await client.post<{ token: string, tokenType: string, username: string, role: string }>('/auth/login', {
+				username,
+				password
 			});
 
-			if (!response.ok) {
-				const error = await response.json();
-				return fail(response.status, {
-					email,
-					error: error.message || 'Invalid credentials'
-				});
-			}
-
-			const result = await response.json();
-
-			// Store token in httpOnly cookie
-			if (result.token) {
-				cookies.set('authToken', result.token, {
-					path: '/',
-					httpOnly: true,
-					secure: process.env.NODE_ENV === 'production',
-					sameSite: 'lax',
-					maxAge: 7 * 24 * 60 * 60 // 7 days
-				});
-			}
-
-			// Store user data in session
-			cookies.set(
-				'user',
-				JSON.stringify({
-					id: result.user.id,
-					email: result.user.email,
-					name: result.user.name,
-					role: result.user.role
-				}),
-				{
-					path: '/',
-					secure: process.env.NODE_ENV === 'production',
-					sameSite: 'lax',
-					maxAge: 7 * 24 * 60 * 60
-				}
-			);
-
-			throw redirect(303, '/');
-		} catch (error) {
-			if (error instanceof redirect) {
-				throw error;
-			}
-			console.error('Login error:', error);
-			return fail(500, {
-				email,
-				error: 'An error occurred during login. Please try again.'
+			// Set the JWT token cookie
+			cookies.set('jwt', response.token, {
+				path: '/',
+				httpOnly: true,
+				secure: false, // Set to true in production
+				sameSite: 'lax',
+				maxAge: 60 * 60 * 24 * 7 // 1 week
 			});
-		}
-		*/
 
-		// BYPASS LOGIC: Always succeed with a mock user
-		console.log('BYPASSING LOGIN FOR:', email);
-		
-		const role = email.includes('admin') ? 'ADMIN' : 'STUDENT';
-		const name = email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1);
-
-		cookies.set('authToken', 'mock-token-' + Date.now(), {
-			path: '/',
-			httpOnly: true,
-			secure: false,
-			sameSite: 'lax',
-			maxAge: 7 * 24 * 60 * 60
-		});
-
-		cookies.set(
-			'user',
-			JSON.stringify({
-				id: 'mock-id-' + role.toLowerCase(),
-				email: email,
-				name: name + ' (Sandbox)',
-				role: role
-			}),
-			{
+			// Optional: store user details if needed
+			cookies.set('user', JSON.stringify({
+				username: response.username,
+				role: response.role
+			}), {
 				path: '/',
 				secure: false,
 				sameSite: 'lax',
-				maxAge: 7 * 24 * 60 * 60
-			}
-		);
+				maxAge: 60 * 60 * 24 * 7
+			});
+
+		} catch (error: any) {
+			console.error('Login error:', error);
+			const errorMessage = error.message || 'Invalid credentials or server error';
+			return fail(401, {
+				form,
+				message: errorMessage
+			});
+		}
 
 		throw redirect(303, '/');
 	}

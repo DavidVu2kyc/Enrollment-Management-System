@@ -3,73 +3,49 @@
   import { fly } from "svelte/transition";
   import Button from "$lib/components/Button.svelte";
   import Input from "$lib/components/Input.svelte";
+  import type { PageData } from "./$types";
 
-  // Mock students data
-  let students = $state([
-    {
-      id: "1",
-      studentId: "2021-0012",
-      name: "John Dominic Doe",
-      email: "john.doe@university.edu",
-      program: "BS CS",
-      year: 3,
-      status: "Active",
-    },
-    {
-      id: "2",
-      studentId: "2021-0450",
-      name: "Jane Mary Smith",
-      email: "jane.smith@university.edu",
-      program: "BS IT",
-      year: 2,
-      status: "Active",
-    },
-    {
-      id: "3",
-      studentId: "2022-0102",
-      name: "Robert Michael Brown",
-      email: "robert.brown@university.edu",
-      program: "BS CS",
-      year: 2,
-      status: "On Leave",
-    },
-    {
-      id: "4",
-      studentId: "2021-0892",
-      name: "Emily Grace Wilson",
-      email: "emily.wilson@university.edu",
-      program: "BS IS",
-      year: 4,
-      status: "Active",
-    },
-    {
-      id: "5",
-      studentId: "2023-0012",
-      name: "William James Davis",
-      email: "william.davis@university.edu",
-      program: "BS CS",
-      year: 1,
-      status: "Active",
-    },
-  ]);
+  let { data }: { data: PageData } = $props();
 
+  let students = $state(data.students || []);
   let searchQuery = $state("");
-  let isLoading = $state(true);
+  let isLoading = $state(false);
 
   let filteredStudents = $derived(
     students.filter(
       (s) =>
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.studentId.includes(searchQuery) ||
-        s.email.toLowerCase().includes(searchQuery.toLowerCase()),
+        `${s.firstName} ${s.lastName}`
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        s.studentNumber.includes(searchQuery) ||
+        s.email?.toLowerCase().includes(searchQuery.toLowerCase()),
     ),
   );
 
-  onMount(() => {
-    setTimeout(() => {
-      isLoading = false;
-    }, 600);
-  });
+  const terminateStudent = async (id: number) => {
+    if (
+      !confirm(
+        "Are you sure you want to terminate this student identity? This action is IRREVERSIBLE.",
+      )
+    )
+      return;
+
+    try {
+      const formData = new FormData();
+      formData.append("id", id.toString());
+
+      const resp = await fetch("?/delete", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!resp.ok) throw new Error("Synchronization failure");
+
+      students = students.filter((s) => s.id !== id);
+    } catch (err) {
+      alert("Failed to terminate identity record.");
+    }
+  };
 </script>
 
 <div class="space-y-12 animate-in fade-in duration-700">
@@ -108,7 +84,7 @@
 
   <!-- Perspective Filter -->
   <div
-    class="glass dark:bg-white/5 p-6 rounded-[32px] border-white/40 dark:border-white/10 shadow-2xl flex flex-col lg:flex-row items-center gap-6"
+    class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col lg:flex-row items-center gap-6"
   >
     <div class="flex-1 w-full">
       <Input
@@ -128,7 +104,7 @@
 
   <!-- Ledger / Table -->
   <div
-    class="glass dark:bg-white/5 rounded-[48px] border-white/40 dark:border-white/10 shadow-3xl overflow-hidden premium-transition"
+    class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden transition-all duration-300"
   >
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
@@ -164,42 +140,43 @@
                   <span
                     class="text-[11px] font-black text-blue-900 bg-white dark:bg-white/10 dark:text-blue-300 px-3 py-1.5 rounded-xl shadow-lg border border-gray-100 dark:border-white/5 italic"
                   >
-                    {student.studentId}
+                    {student.studentNumber}
                   </span>
                 </td>
                 <td class="px-10 py-6">
                   <p
                     class="font-black text-gray-900 dark:text-white uppercase italic tracking-tighter text-lg leading-none mb-1 group-hover:translate-x-1 transition-transform"
                   >
-                    {student.name}
+                    {student.firstName}
+                    {student.lastName}
                   </p>
                   <p
                     class="text-[10px] font-bold text-gray-400 uppercase tracking-widest"
                   >
-                    {student.email}
+                    {student.email || "N/A"}
                   </p>
                 </td>
                 <td class="px-10 py-6">
                   <div class="flex flex-col">
                     <span
                       class="font-black text-blue-900 dark:text-blue-400 text-xs uppercase tracking-widest"
-                      >{student.program}</span
+                      >{student.degree?.code || "GEN"}</span
                     >
                     <span
                       class="text-[9px] font-bold text-gray-400 uppercase tracking-widest"
-                      >Level {student.year} Academic</span
+                      >Level {student.yearLevel} Academic</span
                     >
                   </div>
                 </td>
                 <td class="px-10 py-6">
                   <span
                     class={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm ${
-                      student.status === "Active"
+                      (student.status || "Active") === "Active"
                         ? "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
                         : "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
                     }`}
                   >
-                    {student.status}
+                    {student.status || "Active"}
                   </span>
                 </td>
                 <td class="px-10 py-6 text-right">
@@ -224,6 +201,7 @@
                       >
                     </button>
                     <button
+                      onclick={() => terminateStudent(student.id)}
                       class="w-10 h-10 rounded-xl bg-white dark:bg-white/10 text-gray-400 hover:text-red-600 shadow-sm border border-gray-100 dark:border-white/5 flex items-center justify-center transition-all hover:scale-110"
                       aria-label="Terminate Identity"
                     >

@@ -1,16 +1,15 @@
 <script lang="ts">
   import { userStore } from "$lib/stores/user.svelte";
+  import { fly, fade } from "svelte/transition";
+  import { onMount } from "svelte";
 
   let firstName = $state("");
   let lastName  = $state("");
-  let email     = $state("");
-  let isLoading = $state(false);
-  let message   = $state("");
-  let error     = $state("");
+  let isUpdating = $state(false);
+  let feedback = $state<{ msg: string; type: "success" | "error" } | null>(null);
 
-  $effect(() => {
+  onMount(() => {
     if (userStore.current) {
-      email = userStore.current.email;
       const parts = userStore.current.name.split(" ");
       firstName = parts[0] || "";
       lastName  = parts.slice(1).join(" ") || "";
@@ -19,55 +18,56 @@
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
-    isLoading = true;
-    message   = "";
-    error     = "";
-
+    isUpdating = true;
+    feedback = null;
     try {
       const response = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          name: `${firstName} ${lastName}`.trim(),
-        }),
+        body: JSON.stringify({ name: `${firstName} ${lastName}`.trim() }),
       });
-
-      if (!response.ok) throw new Error("Failed to update profile");
-
-      const result = await response.json();
-      userStore.update(result.data);
-      message = "Profile synchronized successfully.";
-    } catch (err) {
-      error = err instanceof Error ? err.message : "An error occurred";
+      if (!response.ok) throw new Error();
+      userStore.update({ name: `${firstName} ${lastName}`.trim() });
+      feedback = { msg: "Profile updated successfully.", type: "success" };
+    } catch {
+      feedback = { msg: "Failed to update profile. Please try again.", type: "error" };
     } finally {
-      isLoading = false;
+      isUpdating = false;
     }
   };
 
-  $derived: const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const initials = $derived(`${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase());
+  const fullName = $derived(`${firstName} ${lastName}`.trim());
 </script>
 
 <svelte:head>
-  <title>Identity Settings — EMS</title>
+  <title>Profile — EMS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
 </svelte:head>
 
 <style>
-  :global(body) {
-    font-family: 'DM Sans', sans-serif;
-    background-color: #05101f;
+  :root {
+    --page-bg:   #040d1a;
+    --surface-1: rgba(12,28,55,0.6);
+    --surface-2: rgba(255,255,255,0.025);
+    --border-1:  rgba(255,255,255,0.06);
+    --border-2:  rgba(255,255,255,0.04);
+    --text-hi:   #e2ecff;
+    --text-mid:  rgba(148,185,255,0.6);
+    --text-lo:   rgba(96,130,200,0.45);
+    --blue:      #3b82f6;
+    --blue-dark: #1d4ed8;
+    --font:      'Syne', sans-serif;
+    --mono:      'Geist Mono', monospace;
   }
 
+  /* ── PAGE ── */
   .page {
     min-height: 100vh;
-    background-color: #05101f;
-    background-image:
-      radial-gradient(ellipse 70% 50% at 15% -5%, rgba(14, 60, 120, 0.45) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 40% at 85% 100%, rgba(8, 40, 90, 0.3) 0%, transparent 60%);
+    background: var(--page-bg);
+    font-family: var(--font);
     padding: 2.5rem 2rem 6rem;
     position: relative;
     overflow-x: hidden;
@@ -76,489 +76,598 @@
   .page::before {
     content: '';
     position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
-    background-size: 60px 60px;
+    width: 600px; height: 600px;
+    top: -200px; right: -150px;
+    background: radial-gradient(circle, rgba(29,78,216,0.08) 0%, transparent 65%);
     pointer-events: none;
-    z-index: 0;
   }
 
-  .content {
+  .inner {
+    max-width: 860px;
+    margin: 0 auto;
     position: relative;
     z-index: 1;
-    max-width: 800px;
-    margin: 0 auto;
   }
 
-  /* ── Back ────────────────────────────────────── */
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: rgba(120, 160, 220, 0.5);
-    text-decoration: none;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 2.5rem;
-    transition: color 0.2s;
-    animation: fadeUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
-    cursor: pointer;
-    border: none; background: none;
-  }
-  .back-link:hover { color: rgba(160, 200, 255, 0.8); }
-
-  /* ── Header ──────────────────────────────────── */
-  .header {
+  /* ── PAGE EYEBROW ── */
+  .eyebrow-row {
     display: flex;
-    align-items: flex-start;
-    gap: 1.5rem;
-    padding-bottom: 2rem;
+    align-items: center;
+    gap: 0.55rem;
     margin-bottom: 2.5rem;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    animation: fadeUp 0.5s 0.05s cubic-bezier(0.22,1,0.36,1) both;
+  }
+
+  .eyebrow-line {
+    width: 18px; height: 1px;
+    background: var(--text-lo);
+  }
+
+  .eyebrow-text {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.38em;
+    text-transform: uppercase;
+    color: var(--text-lo);
+  }
+
+  /* ── PROFILE HERO ── */
+  .profile-hero {
+    display: flex;
+    align-items: flex-end;
+    gap: 2rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border-1);
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Avatar */
+  .avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
   }
 
   .avatar {
-    width: 64px; height: 64px;
-    background: linear-gradient(135deg, #1e4db7, #0d2d7a);
-    border-radius: 18px;
+    width: 100px; height: 100px;
+    background: linear-gradient(135deg, #1d4ed8, #1e3a8a);
+    border-radius: 28px;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    font-family: 'DM Serif Display', serif;
-    font-style: italic;
-    font-size: 1.5rem;
-    color: rgba(255,255,255,0.9);
-    box-shadow: 0 8px 28px rgba(30,77,183,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
-    letter-spacing: -0.02em;
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #fff;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.06),
+      0 16px 48px rgba(29,78,216,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.15);
     position: relative;
     overflow: hidden;
-    transition: box-shadow 0.3s;
+    letter-spacing: -0.04em;
   }
 
+  /* Sheen sweep */
   .avatar::after {
     content: '';
     position: absolute;
-    top: -50%; left: -50%;
-    width: 200%; height: 200%;
-    background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
-    animation: sheen 4s 1.5s ease-in-out infinite;
+    inset: 0;
+    background: linear-gradient(45deg, transparent 35%, rgba(255,255,255,0.1) 50%, transparent 65%);
+    animation: sheen 4s ease-in-out infinite;
   }
 
   @keyframes sheen {
-    0%,75%,100% { transform: translateX(-100%); }
-    40% { transform: translateX(100%); }
+    0%,70%,100% { transform: translateX(-120%) rotate(0deg); }
+    40%          { transform: translateX(120%) rotate(0deg); }
   }
 
-  .eyebrow {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: rgba(80, 140, 255, 0.65);
-    margin-bottom: 0.5rem;
+  /* Online dot */
+  .avatar-dot {
+    position: absolute;
+    bottom: -3px; right: -3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #22c55e;
+    border: 3px solid var(--page-bg);
+    box-shadow: 0 0 10px rgba(34,197,94,0.7);
   }
 
-  h1 {
-    font-family: 'DM Serif Display', serif;
-    font-style: italic;
-    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-    font-weight: 400;
-    color: #ffffff;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
+  /* Identity text */
+  .identity {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .identity-name {
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-hi);
+    line-height: 1.1;
     margin: 0 0 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .header-sub {
-    font-size: 0.83rem;
-    color: rgba(140, 170, 210, 0.55);
-    line-height: 1.6;
-    margin: 0;
+  .identity-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
   }
 
-  /* ── Card ────────────────────────────────────── */
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    border: 1px solid var(--border-1);
+    background: var(--surface-2);
+    color: var(--text-lo);
+    font-family: var(--mono);
+  }
+
+  .chip.role {
+    color: #60a5fa;
+    background: rgba(59,130,246,0.07);
+    border-color: rgba(59,130,246,0.2);
+  }
+
+  .chip-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.8;
+  }
+
+  .identity-email {
+    font-size: 0.75rem;
+    font-family: var(--mono);
+    color: var(--text-lo);
+    font-weight: 400;
+  }
+
+  /* ── FORM CARD ── */
   .card {
-    background: linear-gradient(145deg, rgba(12,28,55,0.92), rgba(7,18,38,0.96));
-    border: 1px solid rgba(255,255,255,0.07);
+    background: var(--surface-1);
+    border: 1px solid var(--border-1);
     border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05);
-    animation: fadeUp 0.5s 0.12s cubic-bezier(0.22,1,0.36,1) both;
+    backdrop-filter: blur(16px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    margin-bottom: 1.25rem;
   }
 
   .card-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 1.25rem 1.75rem;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    background: rgba(255,255,255,0.02);
+    gap: 0.65rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--border-2);
   }
 
-  .card-title {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgba(100, 140, 200, 0.5);
-    margin: 0;
-  }
-
-  .card-body {
-    padding: 2rem 1.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  /* ── Feedback banners ────────────────────────── */
-  .feedback {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.9rem 1.1rem;
-    border-radius: 12px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    animation: shake-in 0.4s ease, fadeUp 0.3s ease;
-  }
-
-  .feedback.success {
-    background: rgba(10,40,18,0.9);
-    border: 1px solid rgba(74,222,128,0.22);
-    color: #86efac;
-  }
-
-  .feedback.error {
-    background: rgba(50,12,12,0.9);
-    border: 1px solid rgba(248,113,113,0.22);
-    color: #fca5a5;
-    animation: shake 0.4s ease, fadeUp 0.3s ease;
-  }
-
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    20% { transform: translateX(-5px); }
-    40% { transform: translateX(5px); }
-    60% { transform: translateX(-3px); }
-    80% { transform: translateX(3px); }
-  }
-
-  /* ── Info tiles ──────────────────────────────── */
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.85rem;
-  }
-
-  @media (max-width: 480px) {
-    .info-grid { grid-template-columns: 1fr; }
-  }
-
-  .info-tile {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 14px;
-    padding: 1.1rem 1.25rem;
-    transition: border-color 0.2s;
-  }
-
-  .info-tile:hover { border-color: rgba(60,120,255,0.15); }
-
-  .tile-label {
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgba(100, 140, 200, 0.45);
-    margin-bottom: 0.45rem;
-  }
-
-  .tile-value {
-    font-size: 0.83rem;
-    font-weight: 500;
-    color: rgba(200, 220, 255, 0.8);
-    word-break: break-all;
-  }
-
-  .role-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .role-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: #60a5fa;
-    box-shadow: 0 0 6px rgba(96,165,250,0.7);
-    animation: pulse-blue 2s ease-in-out infinite;
+  .card-pip {
+    width: 3px; height: 18px;
+    border-radius: 99px;
+    background: linear-gradient(180deg, #3b82f6, #1e3a8a);
+    box-shadow: 0 0 8px rgba(59,130,246,0.5);
     flex-shrink: 0;
   }
 
-  @keyframes pulse-blue {
-    0%,100% { box-shadow: 0 0 5px rgba(96,165,250,0.7); }
-    50%      { box-shadow: 0 0 10px rgba(96,165,250,0.9), 0 0 18px rgba(96,165,250,0.4); }
+  .card-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-hi);
   }
 
-  .role-value {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #93c5fd;
-    letter-spacing: 0.05em;
-    text-transform: capitalize;
+  .card-badge {
+    margin-left: auto;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-lo);
+    background: var(--surface-2);
+    border: 1px solid var(--border-1);
+    border-radius: 99px;
+    padding: 0.2rem 0.6rem;
   }
 
-  /* ── Divider ─────────────────────────────────── */
-  .section-divider {
-    height: 1px;
-    background: rgba(255,255,255,0.05);
+  .card-body {
+    padding: 1.75rem 1.5rem;
   }
 
-  /* ── Form grid ───────────────────────────────── */
+  /* ── FORM GRID ── */
   .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
   }
 
-  @media (max-width: 520px) {
+  @media (max-width: 580px) {
     .form-grid { grid-template-columns: 1fr; }
   }
 
+  .field { display: flex; flex-direction: column; gap: 0.5rem; }
+  .field.span2 { grid-column: span 2; }
+  @media (max-width: 580px) { .field.span2 { grid-column: span 1; } }
+
   .field-label {
-    display: block;
-    font-size: 0.68rem;
+    font-size: 0.6rem;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(140, 170, 210, 0.7);
-    margin-bottom: 0.5rem;
+    color: var(--text-lo);
   }
 
   .field-input {
     width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-1);
+    border-radius: 13px;
     padding: 0.85rem 1rem;
-    color: #e8f0ff;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font);
     font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-hi);
     outline: none;
     transition: all 0.2s ease;
     box-sizing: border-box;
   }
 
-  .field-input::placeholder { color: rgba(120, 150, 200, 0.3); }
+  .field-input::placeholder { color: rgba(96,130,200,0.25); }
 
   .field-input:hover {
-    border-color: rgba(255,255,255,0.13);
-    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
   }
 
   .field-input:focus {
-    border-color: rgba(80, 140, 255, 0.45);
-    background: rgba(30,70,160,0.1);
-    box-shadow: 0 0 0 3px rgba(60,120,255,0.09);
+    border-color: rgba(59,130,246,0.45);
+    background: rgba(29,78,216,0.08);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.09);
   }
 
-  /* ── Footer ──────────────────────────────────── */
+  /* Read-only field */
+  .field-readonly {
+    background: rgba(255,255,255,0.015);
+    border: 1px dashed rgba(255,255,255,0.07);
+    border-radius: 13px;
+    padding: 0.85rem 1rem;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--text-lo);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: default;
+    user-select: all;
+  }
+
+  .readonly-icon {
+    width: 13px; height: 13px;
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  /* ── FEEDBACK ── */
+  .feedback {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border-radius: 14px;
+    margin-top: 1.25rem;
+    animation: slideIn 0.25s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .feedback.success {
+    background: rgba(16,185,129,0.07);
+    border: 1px solid rgba(16,185,129,0.2);
+  }
+
+  .feedback.error {
+    background: rgba(239,68,68,0.07);
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+
+  .fb-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .feedback.success .fb-icon { background: rgba(16,185,129,0.12); }
+  .feedback.error   .fb-icon { background: rgba(239,68,68,0.12); }
+
+  .fb-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-bottom: 0.15rem;
+  }
+
+  .feedback.success .fb-label { color: #10b981; }
+  .feedback.error   .fb-label { color: #ef4444; }
+
+  .fb-msg {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-hi);
+    line-height: 1.4;
+  }
+
+  /* ── CARD FOOTER ── */
   .card-footer {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding: 1.25rem 1.75rem;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    background: rgba(255,255,255,0.015);
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-2);
+    flex-wrap: wrap;
   }
 
-  .btn-discard {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: rgba(160,190,230,0.65);
-    border-radius: 10px;
-    padding: 0.7rem 1.25rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
+  .footer-hint {
+    font-size: 0.62rem;
+    font-weight: 500;
+    color: var(--text-lo);
+    font-family: var(--mono);
   }
 
-  .btn-discard:hover {
-    background: rgba(255,255,255,0.09);
-    color: rgba(200,220,255,0.8);
-  }
-
-  .btn-save {
-    display: inline-flex;
+  .save-btn {
+    display: flex;
     align-items: center;
-    gap: 0.45rem;
-    background: linear-gradient(135deg, #1e4db7, #0f3298);
-    color: white;
-    border: none;
-    border-radius: 10px;
+    gap: 0.5rem;
     padding: 0.7rem 1.5rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    background: linear-gradient(135deg, #1d4ed8, #1e3a8a);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.25s ease;
-    box-shadow: 0 4px 18px rgba(30,77,183,0.35);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.22s ease;
+    box-shadow: 0 4px 20px rgba(29,78,216,0.35);
   }
 
-  .btn-save:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 28px rgba(30,77,183,0.5);
+  .save-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
   }
 
-  .btn-save:disabled {
-    opacity: 0.6; cursor: not-allowed;
+  .save-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(29,78,216,0.5);
+  }
+
+  .save-btn:hover:not(:disabled)::after { transform: translateX(100%); }
+  .save-btn:active:not(:disabled)       { transform: translateY(0); }
+
+  .save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .spinner {
-    width: 13px; height: 13px;
+    width: 12px; height: 12px;
     border: 2px solid rgba(255,255,255,0.25);
     border-top-color: white;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
   }
 
-  @keyframes spin    { to { transform: rotate(360deg); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
+  /* ── READ-ONLY INFO CARD ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border-2);
+    border-radius: 0 0 24px 24px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 480px) { .info-grid { grid-template-columns: 1fr; } }
+
+  .info-cell {
+    background: var(--surface-1);
+    padding: 1.1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .info-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--text-lo);
+  }
+
+  .info-value {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-mid);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .info-value.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #60a5fa;
+    width: fit-content;
+  }
+
+  .role-pip {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #60a5fa;
+    box-shadow: 0 0 6px rgba(96,165,250,0.7);
   }
 </style>
 
-<div class="page">
-  <div class="content">
+<div class="page" in:fade={{ duration: 350 }}>
+  <div class="inner">
 
-    <!-- Back -->
-    <button class="back-link" onclick={() => window.history.back()}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7-7l-7 7 7 7"/>
-      </svg>
-      Back
-    </button>
+    <!-- Eyebrow -->
+    <div class="eyebrow-row" in:fly={{ y: 10, duration: 420, delay: 40 }}>
+      <span class="eyebrow-line"></span>
+      <span class="eyebrow-text">Profile Settings</span>
+    </div>
 
-    <!-- Header -->
-    <div class="header">
-      <div class="avatar">
-        {firstName.charAt(0)}{lastName.charAt(0)}
+    <!-- Profile hero -->
+    <div class="profile-hero" in:fly={{ y: 14, duration: 480, delay: 80 }}>
+      <div class="avatar-wrap">
+        <div class="avatar">{initials || "?"}</div>
+        <div class="avatar-dot"></div>
       </div>
-      <div>
-        <p class="eyebrow">Account Management</p>
-        <h1>Identity Settings</h1>
-        <p class="header-sub">
-          Manage your institutional profile and authentication credentials within EMS.
-        </p>
+
+      <div class="identity">
+        <h1 class="identity-name">{fullName || "Your Name"}</h1>
+        <div class="identity-chips">
+          <span class="chip role">
+            <span class="chip-dot"></span>
+            {userStore.current?.role ?? "Student"}
+          </span>
+          <!-- <span class="chip">Institutional</span> -->
+        </div>
       </div>
     </div>
 
-    <!-- Card -->
-    <div class="card">
-      <div class="card-header">
-        <p class="card-title">Security Profile &amp; Metadata</p>
-      </div>
+    <!-- Edit card -->
+    <form onsubmit={handleSubmit} in:fly={{ y: 16, duration: 460, delay: 160 }}>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-pip"></div>
+          <span class="card-title">Personal Information</span>
+          <span class="card-badge">Editable</span>
+        </div>
 
-      <form onsubmit={handleSubmit}>
         <div class="card-body">
-
-          <!-- Feedback -->
-          {#if message}
-            <div class="feedback success">
-              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-              </svg>
-              {message}
-            </div>
-          {/if}
-          {#if error}
-            <div class="feedback error">
-              <svg width="15" height="15" viewBox="0 0 20 20" fill="#fca5a5">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-              </svg>
-              {error}
-            </div>
-          {/if}
-
-          <!-- Read-only info -->
-          <div class="info-grid">
-            <div class="info-tile">
-              <p class="tile-label">Institutional Identifier</p>
-              <p class="tile-value">{userStore.current?.email ?? '—'}</p>
-            </div>
-            <div class="info-tile">
-              <p class="tile-label">Authorization Clearance</p>
-              <div class="role-row">
-                <span class="role-dot"></span>
-                <span class="role-value">{userStore.current?.role ?? 'Standard User'}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="section-divider"></div>
-
-          <!-- Editable fields -->
           <div class="form-grid">
-            <div>
-              <label class="field-label" for="firstName">Given Name</label>
+            <div class="field">
+              <label class="field-label" for="fname">First Name</label>
               <input
-                id="firstName"
+                id="fname"
                 class="field-input"
                 type="text"
-                placeholder="e.g. Maria"
                 bind:value={firstName}
+                placeholder="Maria"
                 required
                 autocomplete="given-name"
               />
             </div>
-            <div>
-              <label class="field-label" for="lastName">Family Name</label>
+
+            <div class="field">
+              <label class="field-label" for="lname">Last Name</label>
               <input
-                id="lastName"
+                id="lname"
                 class="field-input"
                 type="text"
-                placeholder="e.g. Santos"
                 bind:value={lastName}
+                placeholder="Santos"
                 required
                 autocomplete="family-name"
               />
             </div>
           </div>
 
+          {#if feedback}
+            <div class="feedback {feedback.type}">
+              <div class="fb-icon">
+                {#if feedback.type === "success"}
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                {:else}
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+                  </svg>
+                {/if}
+              </div>
+              <div>
+                <div class="fb-label">{feedback.type === "success" ? "Saved" : "Error"}</div>
+                <div class="fb-msg">{feedback.msg}</div>
+              </div>
+            </div>
+          {/if}
         </div>
 
-        <!-- Footer -->
         <div class="card-footer">
-          <button type="button" class="btn-discard" onclick={() => window.history.back()}>
-            Discard
-          </button>
-          <button type="submit" class="btn-save" disabled={isLoading}>
-            {#if isLoading}
+          <span class="footer-hint">Changes apply immediately after saving.</span>
+          <button type="submit" class="save-btn" disabled={isUpdating}>
+            {#if isUpdating}
               <span class="spinner"></span>
               Saving…
             {:else}
-              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
               </svg>
-              Update Identity
+              Save Changes
             {/if}
           </button>
         </div>
-      </form>
+      </div>
+    </form>
+
+    <!-- Read-only account info -->
+    <div class="card" in:fly={{ y: 16, duration: 460, delay: 240 }}>
+      <div class="card-header">
+        <div class="card-pip" style="background: linear-gradient(180deg,rgba(148,185,255,0.4),rgba(96,130,200,0.2));box-shadow:none;"></div>
+        <span class="card-title">Account Details</span>
+        <span class="card-badge">Read-only</span>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-cell">
+          <span class="info-label">User ID</span>
+          <span class="info-value">{userStore.current?.id ?? "—"}</span>
+        </div>
+        <div class="info-cell">
+          <span class="info-label">Role</span>
+          <span class="info-value role-badge">
+            <span class="role-pip"></span>
+            {userStore.current?.role ?? "STUDENT"}
+          </span>
+        </div>
+        <div class="info-cell">
+          <span class="info-label">Institutional Email</span>
+          <span class="info-value">{userStore.current?.email ?? "—"}</span>
+        </div>
+        <div class="info-cell">
+          <span class="info-label">Auth Method</span>
+          <span class="info-value">Institutional SSO</span>
+        </div>
+      </div>
     </div>
 
   </div>

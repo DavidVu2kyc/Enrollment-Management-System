@@ -1,240 +1,772 @@
 <script lang="ts">
+  import { onMount, tick } from "svelte";
   import { enrollmentsStore } from "$lib/stores/enrollments.svelte";
   import EnrollmentList from "$lib/components/EnrollmentList.svelte";
-  import { onMount } from "svelte";
+  import { fly, fade, scale } from "svelte/transition";
+  import type { PageData } from "./$types";
+
+  let { data }: { data: PageData } = $props();
 
   let isLoading = $state(true);
-  let error = $state<string | null>(null);
-  let toastMessage = $state<string | null>(null);
-  let toastType = $state<"success" | "error">("success");
+  let filterStatus = $state("ALL");
+  let searchQuery = $state("");
+  let toast = $state<{ msg: string; type: "success" | "error" } | null>(null);
   let toastTimer: ReturnType<typeof setTimeout>;
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     clearTimeout(toastTimer);
-    toastMessage = msg;
-    toastType = type;
-    toastTimer = setTimeout(() => (toastMessage = null), 3500);
+    toast = { msg, type };
+    toastTimer = setTimeout(() => (toast = null), 4000);
   };
 
-  onMount(async () => {
-    try {
-      const response = await fetch("/api/enrollments");
-      if (!response.ok) throw new Error("Failed to fetch enrollments");
-      const result = await response.json();
-      enrollmentsStore.set(result.data || []);
-    } catch (err) {
-      error = err instanceof Error ? err.message : "An error occurred";
-    } finally {
-      isLoading = false;
+  onMount(() => {
+    // Populate store from SSR data
+    if (data.enrollments) {
+      enrollmentsStore.set(data.enrollments);
     }
+    isLoading = false;
   });
 
-  const handleDeleteEnrollment = async (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/enrollments/${id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error();
+      const formData = new FormData();
+      formData.append("id", id);
+
+      const resp = await fetch("?/delete", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!resp.ok) throw new Error();
+
       enrollmentsStore.remove(id);
-      showToast("Enrollment removed successfully.", "success");
+      showToast("Enrollment successfully removed.", "success");
     } catch {
-      showToast("Failed to remove enrollment. Please try again.", "error");
+      showToast("Failed to remove enrollment. Try again.", "error");
     }
   };
 
-  const handleEnrollCourse = async (id: string) => {
-    try {
-      const response = await fetch(`/api/enrollments/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isEnrolled: true, status: "ENROLLED" }),
-      });
-      if (!response.ok) throw new Error();
-      const result = await response.json();
-      enrollmentsStore.update(id, result.data);
-      showToast("Successfully enrolled in course.", "success");
-    } catch {
-      showToast("Failed to enroll in course. Please try again.", "error");
-    }
-  };
+  const filters = [
+    { key: "ALL", label: "All", icon: "M4 6h16M4 10h16M4 14h16M4 18h16" },
+    {
+      key: "ENROLLED",
+      label: "Confirmed",
+      icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+    },
+    {
+      key: "PENDING",
+      label: "Pending",
+      icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+    },
+  ];
+
+  // Counts (approximate – real filtering happens in EnrollmentList)
+  const allCount = $derived(enrollmentsStore.all?.length ?? 0);
 </script>
 
 <svelte:head>
-  <title>My Course Enrollments — EMS</title>
+  <title>Enrollments — EMS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin="anonymous"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Geist+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
 </svelte:head>
 
+<div class="page" in:fade={{ duration: 350 }}>
+  <div class="inner">
+    <!-- ── HERO ── -->
+    <header class="hero" in:fly={{ y: 14, duration: 480, delay: 50 }}>
+      <div>
+        <div class="hero-eyebrow">
+          <!-- <span class="live-dot"></span> -->
+          <!-- <span class="eyebrow-text">Enrollment Management · Live</span> -->
+        </div>
+        <h1 class="page-title">
+          My <em>Enrollments</em>
+        </h1>
+        <p class="page-sub">
+          View, manage, and track all your active course enlistments for the
+          current academic period.
+        </p>
+      </div>
+    </header>
+
+    <!-- ── TOOLBAR ── -->
+    <div class="toolbar" in:fly={{ y: 12, duration: 440, delay: 220 }}>
+      <!-- Filter tabs -->
+      <div class="filter-tabs">
+        {#each filters as f}
+          <button
+            class="tab-btn"
+            class:active={filterStatus === f.key}
+            onclick={() => (filterStatus = f.key)}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d={f.icon} />
+            </svg>
+            {f.label}
+            {#if f.key === "ALL"}
+              <span class="tab-count">{allCount}</span>
+            {/if}
+          </button>
+        {/each}
+      </div>
+
+      <!-- Search -->
+      <div class="search-wrap">
+        <svg
+          class="search-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+        </svg>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Search courses…"
+          bind:value={searchQuery}
+        />
+      </div>
+    </div>
+
+    <!-- ── PANEL ── -->
+    <div class="panel" in:fly={{ y: 16, duration: 440, delay: 300 }}>
+      <!-- Panel header -->
+      <div class="panel-bar">
+        <div class="panel-bar-left">
+          <div class="panel-pip"></div>
+          <span class="panel-title">Enrollment Ledger</span>
+          <span class="panel-count">{isLoading ? "…" : allCount} records</span>
+        </div>
+        <span class="panel-meta">A.Y. 2025–2026 · Sem 2</span>
+      </div>
+
+      <!-- Content -->
+      {#if isLoading}
+        <div class="skeleton-rows">
+          {#each Array(6) as _}
+            <div class="skeleton-row">
+              <div class="sk-block sk-sq"></div>
+              <div class="sk-col">
+                <div class="sk-block sk-ln m"></div>
+                <div class="sk-block sk-ln s"></div>
+              </div>
+              <div class="sk-block sk-chip"></div>
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <EnrollmentList
+          {isLoading}
+          onDeleteEnrollment={handleDelete}
+          onEnrollCourse={() => {}}
+        />
+      {/if}
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+{#if toast}
+  <div class="toast-wrap">
+    <div
+      class="toast {toast.type}"
+      in:fly={{ y: 12, duration: 300 }}
+      out:fly={{ y: 12, duration: 200 }}
+      style="position:relative; overflow:hidden;"
+    >
+      <div class="toast-icon">
+        {#if toast.type === "success"}
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#10b981"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        {:else}
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#ef4444"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" />
+          </svg>
+        {/if}
+      </div>
+      <div class="toast-body">
+        <div class="toast-type">
+          {toast.type === "success" ? "Success" : "Error"}
+        </div>
+        <div class="toast-msg">{toast.msg}</div>
+      </div>
+      <div class="toast-progress"></div>
+    </div>
+  </div>
+{/if}
+
 <style>
-  :global(body) {
-    font-family: 'DM Sans', sans-serif;
-    background-color: #05101f;
+  :root {
+    --page-bg: #040d1a;
+    --surface-1: rgba(12, 28, 55, 0.6);
+    --border-1: rgba(255, 255, 255, 0.06);
+    --border-2: rgba(255, 255, 255, 0.04);
+    --text-hi: #e2ecff;
+    --text-mid: rgba(148, 185, 255, 0.6);
+    --text-lo: rgba(96, 130, 200, 0.45);
+    --blue: #3b82f6;
+    --font: "Syne", sans-serif;
+    --mono: "Geist Mono", monospace;
   }
 
-  /* ── Error Banner ─────────────────────────────── */
-  .error-banner {
+  /* ── PAGE ── */
+  .page {
+    min-height: 100vh;
+    background: var(--page-bg);
+    font-family: var(--font);
+    padding: 2.5rem 2rem 6rem;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  .page::before {
+    content: "";
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    top: -150px;
+    right: -150px;
+    background: radial-gradient(
+      circle,
+      rgba(29, 78, 216, 0.07) 0%,
+      transparent 65%
+    );
+    pointer-events: none;
+  }
+
+  .inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HERO ── */
+  .hero {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    background: linear-gradient(135deg, rgba(180, 28, 28, 0.15), rgba(120, 10, 10, 0.2));
-    border: 1px solid rgba(248, 113, 113, 0.18);
-    border-radius: 20px;
-    padding: 1.5rem 1.75rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 8px 32px rgba(180, 28, 28, 0.15), inset 0 1px 0 rgba(255,255,255,0.04);
-    animation: slideDown 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
   }
 
-  @media (min-width: 640px) {
-    .error-banner { flex-direction: row; align-items: center; justify-content: space-between; }
+  @media (min-width: 860px) {
+    .hero {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
   }
 
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-14px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .error-body { display: flex; align-items: flex-start; gap: 1rem; }
-
-  .error-icon {
-    width: 44px; height: 44px;
-    background: rgba(248, 113, 113, 0.12);
-    border: 1px solid rgba(248, 113, 113, 0.22);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .error-title {
-    font-family: 'DM Serif Display', serif;
-    font-style: italic;
-    font-size: 1.05rem;
-    color: #fca5a5;
-    margin: 0 0 0.25rem;
-  }
-
-  .error-msg {
-    font-size: 0.82rem;
-    color: rgba(252, 165, 165, 0.65);
-    margin: 0;
-    line-height: 1.5;
-  }
-
-  .retry-btn {
-    display: inline-flex;
+  .hero-eyebrow {
+    display: flex;
     align-items: center;
-    gap: 0.45rem;
-    background: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.2);
-    color: #fca5a5;
-    border-radius: 10px;
-    padding: 0.65rem 1.25rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.74rem;
-    font-weight: 600;
-    letter-spacing: 0.09em;
+    gap: 0.55rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  .eyebrow-text {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.38em;
     text-transform: uppercase;
+    color: var(--text-lo);
+  }
+
+  .page-title {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-hi);
+    line-height: 1.05;
+    margin: 0 0 0.7rem;
+  }
+
+  .page-title em {
+    font-style: normal;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(96, 165, 250, 0.45);
+  }
+
+  .page-sub {
+    font-size: 0.82rem;
+    color: var(--text-mid);
+    font-weight: 400;
+    line-height: 1.6;
+    max-width: 440px;
+  }
+
+  /* Hero right: gateway status */
+  .gateway-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-1);
+    border-radius: 18px;
+    padding: 1.1rem 1.4rem;
+    backdrop-filter: blur(16px);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 220px;
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .gateway-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--text-lo);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .gateway-label::before {
+    content: "";
+    width: 12px;
+    height: 1px;
+    background: currentColor;
+  }
+
+  .gateway-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .gateway-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .gw-name {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-mid);
+  }
+
+  .gw-status {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: #22c55e;
+  }
+
+  .gw-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  .gw-status.warn {
+    color: #f59e0b;
+  }
+  .gw-status.off {
+    color: #ef4444;
+  }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Filter tabs */
+  .filter-tabs {
+    display: flex;
+    align-items: center;
+    background: rgba(12, 28, 55, 0.7);
+    border: 1px solid var(--border-1);
+    border-radius: 14px;
+    padding: 4px;
+    gap: 2px;
+    backdrop-filter: blur(12px);
+  }
+
+  .tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-family: var(--font);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-lo);
+    background: none;
+    border: none;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
+  }
+
+  .tab-btn svg {
+    width: 12px;
+    height: 12px;
+    opacity: 0.5;
+    transition: opacity 0.2s;
     flex-shrink: 0;
   }
 
-  .retry-btn:hover {
-    background: rgba(248, 113, 113, 0.18);
-    border-color: rgba(248, 113, 113, 0.32);
-    transform: translateY(-1px);
+  .tab-btn:hover {
+    color: var(--text-mid);
+    background: rgba(255, 255, 255, 0.04);
   }
 
-  /* ── Toast ───────────────────────────────────── */
+  .tab-btn.active {
+    background: #1d4ed8;
+    color: #fff;
+    box-shadow:
+      0 2px 14px rgba(29, 78, 216, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .tab-btn.active svg {
+    opacity: 1;
+  }
+
+  /* Count pill on tab */
+  .tab-count {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 99px;
+    padding: 0.1rem 0.4rem;
+    line-height: 1.4;
+  }
+
+  /* Search */
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 300px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    color: var(--text-lo);
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    background: rgba(12, 28, 55, 0.7);
+    border: 1px solid var(--border-1);
+    border-radius: 12px;
+    padding: 0.6rem 1rem 0.6rem 2.4rem;
+    font-family: var(--font);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-hi);
+    outline: none;
+    backdrop-filter: blur(12px);
+    transition: all 0.2s ease;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-lo);
+  }
+
+  .search-input:focus {
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(29, 78, 216, 0.07);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+  }
+
+  /* ── MAIN PANEL ── */
+  .panel {
+    background: var(--surface-1);
+    border: 1px solid var(--border-1);
+    border-radius: 24px;
+    overflow: hidden;
+    backdrop-filter: blur(16px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  /* Panel header bar */
+  .panel-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-2);
+    gap: 1rem;
+  }
+
+  .panel-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .panel-pip {
+    width: 3px;
+    height: 18px;
+    border-radius: 99px;
+    background: linear-gradient(180deg, #3b82f6, #1e3a8a);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    flex-shrink: 0;
+  }
+
+  .panel-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-hi);
+  }
+
+  .panel-count {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    font-weight: 500;
+    color: var(--text-lo);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-1);
+    border-radius: 99px;
+    padding: 0.18rem 0.55rem;
+  }
+
+  .panel-meta {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    color: var(--text-lo);
+    letter-spacing: 0.06em;
+  }
+
+  /* Skeleton */
+  .skeleton-rows {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .skeleton-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--border-2);
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+
+  .skeleton-row:last-child {
+    border-bottom: none;
+  }
+
+  .sk-block {
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    flex-shrink: 0;
+  }
+
+  .sk-sq {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+  .sk-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .sk-ln {
+    height: 8px;
+    border-radius: 4px;
+  }
+  .sk-ln.s {
+    width: 38%;
+  }
+  .sk-ln.m {
+    width: 62%;
+  }
+  .sk-chip {
+    width: 70px;
+    height: 24px;
+    border-radius: 99px;
+  }
+
+  @keyframes shimmer {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 0.9;
+    }
+  }
+
+  /* ── TOAST ── */
   .toast-wrap {
     position: fixed;
     bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    pointer-events: none;
-    animation: toastIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  @keyframes toastIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(14px) scale(0.96); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    right: 2rem;
+    z-index: 200;
   }
 
   .toast {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1.4rem;
-    border-radius: 14px;
-    font-size: 0.82rem;
-    font-weight: 500;
+    gap: 0.85rem;
+    background: rgba(5, 14, 28, 0.97);
+    border: 1px solid var(--border-1);
+    border-radius: 16px;
+    padding: 1rem 1.4rem;
+    min-width: 300px;
+    max-width: 420px;
     backdrop-filter: blur(24px);
-    box-shadow: 0 16px 48px rgba(0,0,0,0.55);
-    white-space: nowrap;
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .toast.success {
-    background: linear-gradient(135deg, rgba(10, 40, 18, 0.97), rgba(5, 25, 10, 0.98));
-    border: 1px solid rgba(74, 222, 128, 0.22);
-    color: #86efac;
+    border-color: rgba(16, 185, 129, 0.25);
   }
-
   .toast.error {
-    background: linear-gradient(135deg, rgba(50, 12, 12, 0.97), rgba(30, 5, 5, 0.98));
-    border: 1px solid rgba(248, 113, 113, 0.22);
-    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.25);
   }
 
-  .toast-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
+  .toast-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    animation: pulse 1.8s ease-in-out infinite;
   }
 
-  .toast.success .toast-dot { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.7); }
-  .toast.error   .toast-dot { background: #f87171; box-shadow: 0 0 8px rgba(248,113,113,0.7); }
+  .toast.success .toast-icon {
+    background: rgba(16, 185, 129, 0.12);
+  }
+  .toast.error .toast-icon {
+    background: rgba(239, 68, 68, 0.12);
+  }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(0.85); }
+  .toast-type {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+  }
+
+  .toast.success .toast-type {
+    color: #10b981;
+  }
+  .toast.error .toast-type {
+    color: #ef4444;
+  }
+
+  .toast-msg {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-hi);
+    line-height: 1.4;
+  }
+
+  /* Progress bar on toast */
+  .toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    border-radius: 0 0 16px 16px;
+    animation: drain 4s linear forwards;
+  }
+
+  .toast.success .toast-progress {
+    background: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+  }
+  .toast.error .toast-progress {
+    background: #ef4444;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+  }
+
+  @keyframes drain {
+    from {
+      width: 100%;
+    }
+    to {
+      width: 0%;
+    }
   }
 </style>
-
-{#if error}
-  <div class="error-banner">
-    <div class="error-body">
-      <div class="error-icon">
-        <svg width="20" height="20" fill="none" stroke="#fca5a5" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
-        </svg>
-      </div>
-      <div>
-        <p class="error-title">Failed to Load</p>
-        <p class="error-msg">{error}</p>
-      </div>
-    </div>
-    <button class="retry-btn" onclick={() => window.location.reload()}>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-      </svg>
-      Retry
-    </button>
-  </div>
-{/if}
-
-<EnrollmentList
-  {isLoading}
-  onDeleteEnrollment={handleDeleteEnrollment}
-  onEnrollCourse={handleEnrollCourse}
-/>
-
-{#if toastMessage}
-  <div class="toast-wrap">
-    <div class="toast {toastType}">
-      <span class="toast-dot"></span>
-      {toastMessage}
-    </div>
-  </div>
-{/if}

@@ -1,26 +1,15 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { fly } from "svelte/transition";
   import Button from "$lib/components/Button.svelte";
   import Input from "$lib/components/Input.svelte";
+  import type { PageData } from "./$types";
   import type { Section } from "$lib/types";
 
-  let sections = $state<Section[]>([]);
-  let searchQuery = $state("");
-  let isLoading = $state(true);
+  let { data }: { data: PageData } = $props();
 
-  onMount(async () => {
-    try {
-      const response = await fetch("/api/sections");
-      if (!response.ok) throw new Error("Catalog fetch failure");
-      const result = await response.json();
-      sections = result.data || [];
-    } catch (err) {
-      console.error(err);
-    } finally {
-      isLoading = false;
-    }
-  });
+  let sections = $state<Section[]>(data.sections || []);
+  let searchQuery = $state("");
+  let isLoading = $state(false);
 
   let filteredSections = $derived(
     sections.filter(
@@ -70,7 +59,7 @@
   </div>
 
   <div
-    class="glass dark:bg-white/5 p-6 rounded-[32px] border-white/40 dark:border-white/10 shadow-2xl flex flex-col lg:flex-row items-center gap-6"
+    class="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col lg:flex-row items-center gap-6"
   >
     <div class="flex-1 w-full">
       <Input
@@ -89,7 +78,7 @@
   </div>
 
   <div
-    class="glass dark:bg-white/5 rounded-[48px] border-white/40 dark:border-white/10 shadow-3xl overflow-hidden premium-transition"
+    class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden transition-all duration-300"
   >
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
