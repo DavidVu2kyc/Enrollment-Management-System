@@ -32,7 +32,7 @@
   <!-- Admin Sidebar -->
   <aside class="w-full lg:w-80 flex-shrink-0">
     <div
-      class="glass dark:bg-[#0c1c37]/90 rounded-[48px] shadow-3xl border-white/40 dark:border-white/10 overflow-hidden sticky top-32 premium-transition"
+      class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-32 transition-all duration-300"
     >
       <div class="p-10 bg-blue-900 text-white relative overflow-hidden">
         <div class="absolute inset-0 bg-white/5 opacity-20"></div>

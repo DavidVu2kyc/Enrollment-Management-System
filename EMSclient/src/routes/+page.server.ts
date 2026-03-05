@@ -1,10 +1,19 @@
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	// User is already validated by hooks.server.ts
-	// We'll load enrollments on the client side for real-time updates
+export const load: PageServerLoad = async ({ fetch }) => {
+  try {
+    // Fetch dashboard stats from backend API
+    const response = await fetch('/api/stats');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch stats: ${response.status}`);
+    }
+    const stats = await response.json();
 
-	return {
-		user: locals.user
-	};
+    return {
+      stats,
+    };
+  } catch (error) {
+    console.error('Failed to load home page data:', error);
+    return { stats: null };
+  }
 };

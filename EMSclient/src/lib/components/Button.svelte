@@ -2,13 +2,7 @@
   import type { Snippet } from "svelte";
 
   interface Props {
-    variant?:
-      | "primary"
-      | "secondary"
-      | "danger"
-      | "success"
-      | "glass"
-      | "outline";
+    variant?: "primary" | "secondary" | "danger" | "success" | "outline";
     size?: "sm" | "md" | "lg" | "xl";
     disabled?: boolean;
     type?: "button" | "submit" | "reset";
@@ -41,8 +35,6 @@
       "bg-gray-100 dark:bg-white/5 text-gray-500 hover:text-blue-900 dark:hover:text-white border border-gray-200 dark:border-white/10 shadow-sm",
     danger: "bg-red-600 text-white hover:bg-black shadow-lg",
     success: "bg-green-700 text-white hover:bg-black shadow-lg",
-    glass:
-      "glass-dark text-white hover:bg-white hover:text-blue-900 shadow-2xl",
     outline:
       "bg-transparent border-2 border-blue-900 text-blue-900 dark:border-blue-400 dark:text-blue-400 hover:bg-blue-900 hover:text-white dark:hover:bg-blue-400 dark:hover:text-blue-900",
   };

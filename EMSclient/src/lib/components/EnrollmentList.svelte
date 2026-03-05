@@ -417,15 +417,15 @@
 
     <!-- Stats -->
     <div class="stats-grid">
-      <div class="stat-card" data-emoji="📚">
+      <div class="stat-card"  >
         <p class="stat-label">Total Loads</p>
         <p class="stat-num">{filterStore.searchedAndFiltered.length}</p>
       </div>
-      <div class="stat-card" data-emoji="✅">
+      <div class="stat-card">
         <p class="stat-label">Confirmed</p>
         <p class="stat-num confirmed">{enrollmentsStore.enrolledCount}</p>
       </div>
-      <div class="stat-card" data-emoji="⏳">
+      <div class="stat-card" >
         <p class="stat-label">Waitlisted</p>
         <p class="stat-num pending">{enrollmentsStore.pendingCount}</p>
       </div>

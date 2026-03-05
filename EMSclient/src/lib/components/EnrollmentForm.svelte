@@ -3,13 +3,16 @@
   import { yup } from "sveltekit-superforms/adapters";
   import * as Y from "yup";
   import Button from "./Button.svelte";
-  import type { Enrollment, Section } from "$lib/types";
+  import type { Section } from "$lib/types/section";
+
+  import type { Enrollment } from "$lib/types";
 
   interface Props {
-    enrollment?: Enrollment;
+    enrollment?: Enrollment | null;
     availableSections?: Section[];
     onSubmit?: (data: any) => void;
     isLoading?: boolean;
+    mode?: "new" | "edit";
   }
 
   let {
@@ -17,18 +20,25 @@
     availableSections = [],
     onSubmit,
     isLoading = false,
+    mode = "new",
   }: Props = $props();
 
   const schema = Y.object().shape({
     sectionId: Y.string().required("Section choice is mandatory"),
+    status: Y.string().oneOf(["PENDING", "ENROLLED", "DROPPED"]).optional(),
   });
 
   // Use a stable reference for initial state to satisfy Svelte 5 linting
-  // if enrollment changes later, the $effect handles the sync.
+  // svelte-ignore state_referenced_locally
   const initialSectionId = enrollment?.sectionId || "";
+  // svelte-ignore state_referenced_locally
+  const initialStatus = enrollment?.status || "PENDING";
 
   const { form, errors, enhance } = superForm(
-    { sectionId: initialSectionId },
+    {
+      sectionId: initialSectionId,
+      status: initialStatus,
+    },
     {
       validators: yup(schema),
       SPA: true,
@@ -50,7 +60,7 @@
 </script>
 
 <div
-  class="glass dark:bg-[#0c1c37]/80 rounded-[40px] shadow-2xl border-white/20 dark:border-white/10 overflow-hidden premium-transition"
+  class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300"
 >
   <div class="bg-blue-900 p-10 text-white relative overflow-hidden">
     <div
@@ -131,6 +141,48 @@
         </div>
       {/if}
     </div>
+
+    <!-- Status Selection (Edit Mode Only) -->
+    {#if mode === "edit"}
+      <div class="space-y-4">
+        <label
+          for="status"
+          class="block text-[10px] font-black text-gray-400 dark:text-blue-300/40 uppercase tracking-[0.3em]"
+        >
+          Enrollment Status <span class="text-red-500">*</span>
+        </label>
+        <div class="relative group">
+          <select
+            id="status"
+            bind:value={$form.status}
+            name="status"
+            required
+            class="w-full px-6 py-5 rounded-2xl border-2 border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-white font-black uppercase tracking-widest text-xs focus:outline-none focus:border-blue-900 dark:focus:border-blue-500 transition-all appearance-none"
+          >
+            <option value="PENDING">PENDING</option>
+            <option value="ENROLLED">ENROLLED</option>
+            <option value="DROPPED">DROPPED</option>
+          </select>
+          <div
+            class="absolute inset-y-0 right-0 flex items-center px-6 pointer-events-none text-gray-400 group-focus-within:text-blue-900"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19 9l-7 7-7-7"
+              ></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+    {/if}
 
     <!-- Selected Section Details -->
     {#if $form.sectionId}
