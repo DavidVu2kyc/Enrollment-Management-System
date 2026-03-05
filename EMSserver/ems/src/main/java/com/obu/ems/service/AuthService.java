@@ -32,19 +32,24 @@ public class AuthService {
         // login ( authenticate user and receive JWT token )
         public AuthResponse login(LoginRequest request) {
 
-                // use authentication manager to authen username and password
+                // use authentication manager to authenticate username and password
                 Authentication authentication = authenticationManager.authenticate(
-                                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+                                new UsernamePasswordAuthenticationToken(
+                                                request.getUsername(),
+                                                request.getPassword()));
 
                 // generate JWT token
                 String jwtToken = jwtTokenProvider.generateToken(authentication);
 
                 // extract the role from the authenticated user
-                String role = authentication.getAuthorities().stream().findFirst().map(GrantedAuthority::getAuthority)
+                String role = authentication.getAuthorities()
+                                .stream()
+                                .findFirst().map(GrantedAuthority::getAuthority)
                                 .orElse("STUDENT");
 
                 AuthResponse response = AuthResponse.builder()
                                 .token(jwtToken)
+                                .username(request.getUsername())
                                 .role(role)
                                 .build();
 
