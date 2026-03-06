@@ -29,9 +29,6 @@ export interface StudentProfile {
 	firstName: string;
 	lastName: string;
 	degreeId: string;
-	yearlevel: number;
-	totalUnits: number;
-	gpa: number;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -48,11 +45,7 @@ export interface Schedule {
 	roomId?: string;
 	room?: Room;
 }
-
-
-
-
-
+	
 // Degree
 export interface Degree {
 	id: string;

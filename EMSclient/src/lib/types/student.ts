@@ -19,6 +19,16 @@ export interface Student {
     degree?: Degree;
     status?: string; // Mocking 'Active' status if not in spec, or from User field
 }
+export interface StudentResponse {
+    id: number;
+    studentNumber: string;
+    firstName: string;
+    lastName: string;
+    username: string;
+    name:string; 
+    email?: string;
+    status?: string; // Mocking 'Active' status if not in spec, or from User field
+}
 
 export interface UpdateStudentRequest {
     firstName: string;

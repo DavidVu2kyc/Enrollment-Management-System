@@ -39,7 +39,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     event.url.pathname === "/login" || event.url.pathname === "/register";
 
   // Protected routes list
-  const protectedRoutes = ["/enrollments", "/profile", "/admin"];
+  const protectedRoutes = ["/enrollments", "/students/profile", "/admin"];
   const isRoot = event.url.pathname === "/";
   const isProtectedRoute =
     isRoot ||

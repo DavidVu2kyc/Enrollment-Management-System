@@ -27,32 +27,6 @@
 
   // Track focused field for UI styling
   let focusedField = $state<string | null>(null);
-
-  // Registration handling
-  let showRegister = $state(false);
-
-  // Initialize registration form
-  const {
-    form: registerForm,
-    errors: registerErrors,
-    message: registerMessage,
-    enhance: registerEnhance,
-    delayed: registerDelayed,
-  } = superForm(defaults(yup(registerSchema)), {
-    SPA: true,
-    validators: yup(registerSchema),
-  });
-
-  const handleRegister = async () => {
-    const client = createServerApiClient(null, fetch);
-    try {
-      await client.post("/auth/register", $registerForm);
-      showRegister = false;
-      // after successful registration, redirect back to login (or toggle view)
-    } catch (e) {
-      console.error("Registration failed", e);
-    }
-  };
 </script>
 
 <svelte:head>
@@ -75,7 +49,7 @@
       <h1>EMS</h1>
       <p>Enrollment Management System</p>
     </header>
-    {#if !showRegister}
+
       <form method="POST" action="?/login" use:loginEnhance>
         <!-- Username -->
         <div class="field">
@@ -145,51 +119,16 @@
             {#if $loginDelayed}<span class="loader"></span>{:else}Login{/if}
           </button>
           <a
-            href="#"
+            href="/register"
             onclick={(e) => {
               e.preventDefault();
-              showRegister = true;
-            }}>Register</a
+              goto("/register");
+            }}
           >
+            Register
+          </a>
         </div>
       </form>
-    {:else}
-      <form onsubmit={handleRegister} use:registerEnhance>
-        <div class="field">
-          <label for="regUsername">Username</label>
-          <input
-            id="regUsername"
-            name="username"
-            bind:value={$registerForm.username}
-            required
-          />
-        </div>
-        <div class="field">
-          <label for="regPassword">Password</label>
-          <input
-            id="regPassword"
-            name="password"
-            type="password"
-            bind:value={$registerForm.password}
-            required
-          />
-        </div>
-        {#if $registerMessage}<p class="message">{$registerMessage}</p>{/if}
-        <div class="actions">
-          <button type="submit" disabled={$registerDelayed}>
-            {#if $registerDelayed}<span class="loader"
-              ></span>{:else}Register{/if}
-          </button>
-          <a
-            href="#"
-            onclick={(e) => {
-              e.preventDefault();
-              showRegister = false;
-            }}>Back to Login</a
-          >
-        </div>
-      </form>
-    {/if}
   </div>
 </main>
 

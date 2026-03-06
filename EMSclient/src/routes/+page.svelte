@@ -48,7 +48,6 @@
       accent: "#3b82f6",
       accentBg: "rgba(59,130,246,0.08)",
       accentBorder: "rgba(59,130,246,0.2)",
-      // trend: "+2 from last sem",
       trendUp: true,
     },
     {
@@ -59,7 +58,6 @@
       accent: "#10b981",
       accentBg: "rgba(16,185,129,0.08)",
       accentBorder: "rgba(16,185,129,0.2)",
-      // trend: "All confirmed",
       trendUp: true,
     },
     {
@@ -70,7 +68,6 @@
       accent: "#f59e0b",
       accentBg: "rgba(245,158,11,0.08)",
       accentBorder: "rgba(245,158,11,0.2)",
-      // trend: "Closes in 3 days",
       trendUp: false,
     },
     {
@@ -81,7 +78,6 @@
       accent: "#a78bfa",
       accentBg: "rgba(167,139,250,0.08)",
       accentBorder: "rgba(167,139,250,0.2)",
-      // trend: "High demand",
       trendUp: false,
     },
   ]);
