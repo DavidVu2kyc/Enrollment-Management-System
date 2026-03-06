@@ -28,6 +28,21 @@ public class StudentController {
         return ResponseEntity.ok(studentService.getAll(degreeId, PageRequest.of(page, size)));
     }
 
+      @GetMapping("/profile")
+    public ResponseEntity<StudentResponse> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+
+            StudentResponse response = studentService.getByUserId(user.getUserId());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(404).build();
+        }
+    }
+
     @GetMapping("/me")
     public ResponseEntity<StudentResponse> getMe(@AuthenticationPrincipal UserDetails userDetails) {
 
@@ -44,8 +59,7 @@ public class StudentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<StudentResponse> update(@PathVariable Long id,
-                                                  @Valid @RequestBody UpdateStudentRequest request) {
+    public ResponseEntity<StudentResponse> update(@PathVariable Long id, @Valid @RequestBody UpdateStudentRequest request) {
         try {
             StudentResponse response = studentService.updateStudentRequest(id, request);
             return ResponseEntity.ok(response);

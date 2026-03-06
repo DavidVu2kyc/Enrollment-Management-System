@@ -1,6 +1,6 @@
-INSERT INTO enrollments (student_id, section_id, status, enrolled_at) VALUES
-                                                                          (6,1,'ENROLLED',NOW()),
-                                                                          (6,2,'ENROLLED',NOW()),
-                                                                          (6,3,'ENROLLED',NOW()),
-                                                                          (6,4,'ENROLLED',NOW()),
-                                                                          (6,5,'ENROLLED',NOW());
+-- INSERT INTO enrollments (student_id, section_id, status, enrolled_at) VALUES
+--                                                                           (6,1,'ENROLLED',NOW()),
+--                                                                           (6,2,'ENROLLED',NOW()),
+--                                                                           (6,3,'ENROLLED',NOW()),
+--                                                                           (6,4,'ENROLLED',NOW()),
+--                                                                           (6,5,'ENROLLED',NOW());
