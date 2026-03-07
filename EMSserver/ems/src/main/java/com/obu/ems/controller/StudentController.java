@@ -28,7 +28,7 @@ public class StudentController {
         return ResponseEntity.ok(studentService.getAll(degreeId, PageRequest.of(page, size)));
     }
 
-      @GetMapping("/profile")
+    @GetMapping("/profile")
     public ResponseEntity<StudentResponse> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
 
         try {
