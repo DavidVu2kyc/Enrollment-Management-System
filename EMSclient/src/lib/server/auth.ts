@@ -45,3 +45,6 @@ export async function register(
   const client = createServerApiClient(null, fetch);
   return client.post<StudentResponse>("/auth/register", data);
 }
+
+
+

@@ -551,7 +551,6 @@
       <div class="hero-left">
         <h1 class="hero-title">
           {greeting}<br>
-          <!-- <span>{userStore.current?.name?.split(" ")[0] ?? "Scholar"}</span>. -->
         </h1>
       </div>
 
