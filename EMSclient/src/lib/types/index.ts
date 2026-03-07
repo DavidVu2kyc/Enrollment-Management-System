@@ -6,6 +6,7 @@ export interface User {
 	name?: string;
 	role: 'STUDENT' | 'ADMIN';
 	studentId?: string;
+	token?: string;
 }
 
 // Authentication
@@ -29,14 +30,9 @@ export interface StudentProfile {
 	firstName: string;
 	lastName: string;
 	degreeId: string;
-	yearlevel: number;
-	totalUnits: number;
-	gpa: number;
 	createdAt: string;
 	updatedAt: string;
 }
-
-
 
 // Schedule
 export interface Schedule {
@@ -48,11 +44,7 @@ export interface Schedule {
 	roomId?: string;
 	room?: Room;
 }
-
-
-
-
-
+	
 // Degree
 export interface Degree {
 	id: string;

@@ -1,7 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { createServerApiClient } from '$lib/api/client';
-import type { Section } from '$lib/types';
+import type { Section } from '$lib/types/section';
 
 export const load: PageServerLoad = async ({ locals, fetch }) => {
     if (!locals.token) {

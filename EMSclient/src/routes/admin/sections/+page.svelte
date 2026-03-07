@@ -3,7 +3,7 @@
   import Button from "$lib/components/Button.svelte";
   import Input from "$lib/components/Input.svelte";
   import type { PageData } from "./$types";
-  import type { Section } from "$lib/types";
+  import type { Section } from "$lib/types/section";
 
   let { data }: { data: PageData } = $props();
 

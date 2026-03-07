@@ -49,7 +49,7 @@ export const actions: Actions = {
         await client.put(`/enrollments/${params.id}/status`, { status });
       } else if (sectionId) {
         // Create new enrollment
-        const meResponse = await client.get<any>('/students/me');
+        const meResponse = await client.get<any>('/api/students/me');
         await client.post('/enrollments', {
           studentId: meResponse.studentId,
           sectionId

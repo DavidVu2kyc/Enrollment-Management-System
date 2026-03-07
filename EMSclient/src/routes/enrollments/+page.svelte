@@ -174,6 +174,7 @@
           {/each}
         </div>
       {:else}
+      <!-- show a list of enrollment form postgresql -->
         <EnrollmentList
           {isLoading}
           onDeleteEnrollment={handleDelete}

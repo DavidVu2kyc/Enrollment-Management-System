@@ -17,26 +17,58 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class StudentController {
 
-     private final StudentService studentService;
-     private final UserRepository userRepository;
+    private final StudentService studentService;
+    private final UserRepository userRepository;
 
-     @GetMapping
-     public ResponseEntity<Page<StudentResponse>> getAll(
-             @RequestParam(required = false) Long degreeId,
-             @RequestParam(defaultValue = "0") int page,
-             @RequestParam(defaultValue = "20") int size) {
-         return ResponseEntity.ok(studentService.getAll(degreeId, PageRequest.of(page, size)));
-     }
+    @GetMapping
+    public ResponseEntity<Page<StudentResponse>> getAll(
+            @RequestParam(required = false) Long degreeId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(studentService.getAll(degreeId, PageRequest.of(page, size)));
+    }
 
-     @GetMapping("/me")
-     public ResponseEntity<StudentResponse> getMe(@AuthenticationPrincipal UserDetails userDetails) {
-         User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
-         return ResponseEntity.ok(studentService.getByUserId(user.getUserId()));
-     }
+    @GetMapping("/profile")
+    public ResponseEntity<StudentResponse> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
 
-     @PutMapping("/{id}")
-     public ResponseEntity<StudentResponse> update(@PathVariable Long id,
-                                                   @Valid @RequestBody UpdateStudentRequest request) {
-         return ResponseEntity.ok(studentService.updateStudentRequest(id, request));
-     }
+        try {
+            User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+
+            StudentResponse response = studentService.getByUserId(user.getUserId());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(404).build();
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<StudentResponse> getMe(@AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+
+            StudentResponse response = studentService.getByUserId(user.getUserId());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(404).build();
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<StudentResponse> update(@PathVariable Long id, @Valid @RequestBody UpdateStudentRequest request) {
+        try {
+            StudentResponse response = studentService.updateStudentRequest(id, request);
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).build();
+        }
+    }
+
+
+
 }

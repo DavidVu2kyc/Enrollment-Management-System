@@ -1,9 +1,7 @@
 // Room
 export interface Room {
-	id: string;
+	roomId: string;
 	building: string;
 	roomNumber: string;
 	capacity: number;
-	createdAt: string;
-	updatedAt: string;
 }

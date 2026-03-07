@@ -2,6 +2,7 @@ package com.obu.ems.service;
 
 import com.obu.ems.dto.StudentResponse;
 import com.obu.ems.dto.UpdateStudentRequest;
+import com.obu.ems.mapper.DegreeMapper;
 import com.obu.ems.model.Degree;
 import com.obu.ems.model.Student;
 import com.obu.ems.repository.DegreeRepository;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +30,8 @@ public class StudentService {
     @Autowired
     private DegreeRepository degreeRepository;
 
+    private final DegreeMapper degreeMapper;
+
 //    Get all students ( a list of students - admin role only )
         public Page<StudentResponse> getAll(Long degreeId, Pageable pageable)
     {
@@ -41,14 +45,15 @@ public class StudentService {
         return StudentResponse.builder()
                 .studentId(student.getStudentId())
                 .userId(student.getUser().getUserId())
-//                mising username
+                .username(student.getUser().getUsername())
                 .firstName(student.getFirstName())
                 .lastName(student.getLastName())
                 .studentNumber(student.getStudentNumber())
-//                .degree(student.getDegree()) ( conflict degree and degreeResponse
+                .degree(degreeMapper.mapToDegreeResponse(student.getDegree()))
                 .build();
     }
 
+    @Transactional(readOnly = true)
     //    Get student by user ID (for auth flow)
     public StudentResponse getByUserId(Long userId)
     {
@@ -59,6 +64,7 @@ public class StudentService {
 
     }
 
+    @Transactional(readOnly = true)
     //    update student profile
     public StudentResponse updateStudentRequest(Long useIid, UpdateStudentRequest request)
     {

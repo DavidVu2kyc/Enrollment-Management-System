@@ -4,7 +4,7 @@ import type { RequestHandler } from './$types';
 export const POST: RequestHandler = async ({ cookies }) => {
 	try {
 		// Clear authentication cookies
-		cookies.delete('authToken', { path: '/' });
+		cookies.delete('jwt', { path: '/' });
 		cookies.delete('user', { path: '/' });
 
 		return json({

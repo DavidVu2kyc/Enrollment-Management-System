@@ -1,6 +1,6 @@
-import type { ApiError } from '$lib/types/apierror';
+import type { ApiError } from "$lib/types/apierror";
 
-const API_BASE_URL = 'http://localhost:8081/api';
+const API_BASE_URL = "http://localhost:8081/api";
 
 export class ApiClient {
   private accessToken: string | null = null;
@@ -8,7 +8,9 @@ export class ApiClient {
 
   constructor(fetchFn?: typeof fetch) {
     // Determine whether to use the provided fetch (from SvelteKit) or the global fetch
-    this.fetchFn = fetchFn || (typeof window !== 'undefined' ? window.fetch.bind(window) : fetch);
+    this.fetchFn =
+      fetchFn ||
+      (typeof window !== "undefined" ? window.fetch.bind(window) : fetch);
   }
 
   setAccessToken(token: string | null) {
@@ -17,30 +19,33 @@ export class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers
+      "Content-Type": "application/json",
+      ...options.headers,
     };
 
     if (this.accessToken) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.accessToken}`;
+      (headers as Record<string, string>)["Authorization"] =
+        `Bearer ${this.accessToken}`;
     }
 
+    debugger
     const response = await this.fetchFn(url, {
       ...options,
-      headers
+      headers,
+      credentials: "include",
     });
 
     if (!response.ok) {
       const error: ApiError = await response.json().catch(() => ({
         status: response.status,
         error: response.statusText,
-        message: 'An error occurred',
-        timestamp: new Date().toISOString()
+        message: "An error occurred",
+        timestamp: new Date().toISOString(),
       }));
       throw error;
     }
@@ -49,36 +54,45 @@ export class ApiClient {
       return {} as T;
     }
 
-    return response.json();
+    // Handle plain text responses
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      return response.json();
+    }
+
+    return response.text() as unknown as T;
   }
 
   get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' });
+    return this.request<T>(endpoint, { method: "GET" });
   }
 
   post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined
+      method: "POST",
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
 
   put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined
+      method: "PUT",
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
 
   delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+    return this.request<T>(endpoint, { method: "DELETE" });
   }
 }
 
 export const apiClient = new ApiClient();
 
 // Server-side API client factory
-export function createServerApiClient(accessToken: string | null, customFetch?: typeof fetch): ApiClient {
+export function createServerApiClient(
+  accessToken: string | null,
+  customFetch?: typeof fetch,
+): ApiClient {
   const client = new ApiClient(customFetch);
   client.setAccessToken(accessToken);
   return client;
