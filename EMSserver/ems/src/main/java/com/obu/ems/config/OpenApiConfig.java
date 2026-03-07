@@ -8,8 +8,19 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@OpenAPIDefinition(info = @Info(title = "OBU Enrollment Management System API", version = "1.0", description = "API documentation for the EMS backend"), security = @SecurityRequirement(name = "Bearer Authentication"))
-@SecurityScheme(name = "Bearer Authentication", type = SecuritySchemeType.HTTP, bearerFormat = "JWT", scheme = "bearer")
+@OpenAPIDefinition(
+        info = @Info(
+                title = "OBU Enrollment Management System API",
+                version = "1.0",
+                description = "API documentation for the EMS backend"
+        ),
+        security = @SecurityRequirement(name = "bearerAuth")
+)
+@SecurityScheme(
+        name = "bearerAuth",
+        type = SecuritySchemeType.HTTP,
+        scheme = "bearer",
+        bearerFormat = "JWT"
+)
 public class OpenApiConfig {
-    
 }

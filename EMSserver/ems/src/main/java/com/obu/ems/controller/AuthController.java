@@ -2,6 +2,8 @@ package com.obu.ems.controller;
 
 import com.obu.ems.dto.*;
 import com.obu.ems.service.AuthService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,4 +47,31 @@ public class AuthController {
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@CookieValue(name = "jwt", required = false) String token, HttpServletResponse response) {
+
+        log.info("Logout attempt");
+        if (token == null) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Token cookie missing");
+        }
+
+        try {
+            authService.logout(token);
+            Cookie cookie = new Cookie("jwt", null);
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(0);
+            response.addCookie(cookie);
+
+
+            return ResponseEntity.ok("Logout successful");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Invalid or expired token");
+        }
+    }
+
 }
