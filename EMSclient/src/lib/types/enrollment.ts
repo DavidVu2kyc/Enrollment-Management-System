@@ -1,29 +1,25 @@
 import type { Section } from "./section";
+import type { Degree } from "./student";
 
 // Course
 export interface Course {
-	id: string;
+	courseId: string;
 	code: string;
-	name: string;
+	title: string;
 	units: number;
-	prerequisiteIds?: string[];
-	createdAt: string;
-	updatedAt: string;
+	degree?:Degree
 }
 
 // Enrollment
 export interface Enrollment {
-	id: string;
+	enrollmentId: string;
 	studentId: string;
 	sectionId: string;
+	status: 'PENDING' | 'ENROLLED' | 'DROPPED'| 'CANCELLED';
 	course?: Course;
 	section?: Section;
 	enrolledAt: string;
-	status: 'PENDING' | 'ENROLLED' | 'DROPPED';
 	isEnrolled: boolean;
-	scheduledConflict?: boolean;
-	enrollmentDate: string;
-	updatedAt: string;
 }
 
 export interface CreateEnrollmentRequest {
@@ -31,7 +27,7 @@ export interface CreateEnrollmentRequest {
 }
 
 export interface UpdateEnrollmentRequest {
-	status?: 'PENDING' | 'ENROLLED' | 'DROPPED';
+	status?: 'PENDING' | 'ENROLLED' | 'DROPPED'| 'CANCELLED';
 	isEnrolled?: boolean;
 }
 

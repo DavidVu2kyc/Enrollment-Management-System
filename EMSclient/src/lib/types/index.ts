@@ -33,8 +33,6 @@ export interface StudentProfile {
 	updatedAt: string;
 }
 
-
-
 // Schedule
 export interface Schedule {
 	id: string;

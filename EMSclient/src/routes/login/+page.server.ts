@@ -4,6 +4,7 @@ import { yup } from "sveltekit-superforms/adapters";
 import { loginSchema } from "$lib/schemas/login.schema";
 import type { PageServerLoad, Actions } from "./$types";
 import { createServerApiClient } from "$lib/api/client";
+import { env } from "$env/dynamic/private";
 
 export const load: PageServerLoad = async () => {
   const form = await superValidate(yup(loginSchema));
@@ -30,43 +31,39 @@ export const actions: Actions = {
         role: string;
       }>("/auth/login", {
         username,
-        password
+        password,
       });
 
       cookies.set("jwt", response.token, {
         path: "/",
         httpOnly: true,
-        secure: false,
+        secure: env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7
+        maxAge: 60 * 60 * 24 * 7,
       });
 
       cookies.set(
         "user",
         JSON.stringify({
           username: response.username,
-          role: response.role
+          role: response.role,
         }),
         {
           path: "/",
-          secure: false,
+          secure: env.NODE_ENV === "production",
           sameSite: "lax",
-          maxAge: 60 * 60 * 24 * 7
-        }
+          maxAge: 60 * 60 * 24 * 7,
+        },
       );
 
-      return {
-        form,
-        message: "Login successful! Redirecting..."
-      };
-
-    } catch (error: any) {
+      throw redirect(303, "/dashboard");
+    } catch (error: unknown) {
       console.error("Login error:", error);
 
       return fail(401, {
         form,
-        message: error?.message || "Invalid username or password"
+        message: "Invalid username or password",
       });
     }
-  }
+  },
 };
