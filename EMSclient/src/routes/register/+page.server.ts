@@ -12,7 +12,8 @@ export const load: PageServerLoad = async ({ fetch }) => {
 
     let degrees: Degree[] = [];
     try {
-        const response = await client.get<Degree[]>('/degrees');
+        debugger
+        const response = await client.get<Degree[]>('/terms/degrees');
         degrees = response;
     } catch (error) {
         console.error('Failed to fetch degrees:', error);

@@ -51,7 +51,7 @@ export interface Schedule {
 	
 // Degree
 export interface Degree {
-	id: string;
+	degreeId: number;
 	name: string;
 	code: string;
 	requiredUnits: number;

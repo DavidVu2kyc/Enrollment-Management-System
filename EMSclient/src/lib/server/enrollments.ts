@@ -1,32 +1,30 @@
 import { createServerApiClient } from '$lib/api/client';
-import type { Enrollment, EnrollmentResponse } from '$lib/types/enrollment';
+import type { EnrollmentResponse, UpdateEnrollmentRequest } from '$lib/types/enrollment';
+import type { StudentResponse } from '$lib/types/student';
 
 export async function getMyEnrollments(token: string, fetch: typeof globalThis.fetch) {
   const client = createServerApiClient(token, fetch);
-  
-  // get studentId 
-  const meResponse = await client.get<any>('students/profile');
-  console.log("My response"+meResponse);
-  const studentId = meResponse.studentId;
-  
- // 2️⃣ (optional) fetch the active term – not used for enrollments here
-  await client.get<any>('/terms/active');
-  if (studentId) {
-    return await client.get<EnrollmentResponse[]>(
-      `/enrollments/my/${studentId}`
-    );
-  }
-  return [];
+  const { studentId } = await client.get<StudentResponse>('students/profile');
+  if (!studentId) return [];
+  return await client.get<EnrollmentResponse[]>(`/enrollments/my/${studentId}`);
 }
 
-
 export async function deleteEnrollment(
-  enrollmentId: string,
+  enrollmentId: number, // ✅ number, not string
   token: string,
   fetch: typeof globalThis.fetch
 ) {
   const client = createServerApiClient(token, fetch);
-  const meResponse = await client.get<any>('students/profile');
-  await client.delete(`/enrollments/${enrollmentId}?studentId=${meResponse.studentId}`);
+  const { studentId } = await client.get<StudentResponse>('students/profile');
+  await client.delete(`/enrollments/${enrollmentId}?studentId=${studentId}`);
 }
 
+export async function updateEnrollment(
+  enrollmentId: number,
+  updateData: UpdateEnrollmentRequest,
+  token: string,
+  fetch: typeof globalThis.fetch
+) {
+  const client = createServerApiClient(token, fetch);
+  await client.put(`/enrollments/${enrollmentId}/status`, updateData);
+}

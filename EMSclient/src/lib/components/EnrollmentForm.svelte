@@ -5,10 +5,11 @@
   import Button from "./Button.svelte";
   import type { Section } from "$lib/types/section";
   import type { Enrollment } from "$lib/types/enrollment";
+  import type { SectionResponse } from "$lib/types/section"; // ✅ use API type
 
   interface Props {
     enrollment?: Enrollment | null;
-    availableSections?: Section[];
+    availableSections?: SectionResponse[];
     onSubmit?: (data: any) => void;
     isLoading?: boolean;
     mode?: "new" | "edit";
@@ -35,10 +36,13 @@
   // svelte-ignore state_referenced_locally
   const initialSectionId = enrollment?.sectionId || undefined;
   // svelte-ignore state_referenced_locally
-  const initialStatus = enrollment?.status || "PENDING";
+  // const initialStatus = enrollment?.status || "PENDING";
 
   const { form, errors, enhance } = superForm(
-    { sectionId: initialSectionId, status: initialStatus },
+    {
+      sectionId: enrollment?.sectionId ?? undefined,
+      status: enrollment?.status ?? "PENDING",
+    },
     {
       validators: yup(schema),
       SPA: true,
@@ -112,20 +116,22 @@
         <div class="select-wrap">
           <select
             id="sectionId"
-            bind:value={$form.sectionId}
             name="sectionId"
+            bind:value={$form.sectionId}
             required
             aria-label="Select course section"
             disabled={isLoading || availableSections.length === 0}
           >
             <option value="">Select a section…</option>
+
             {#each availableSections as section}
-              <option value={section.sectionId}>
+              <option value={String(section.sectionId)}>
                 {section.course?.code} — {section.course
                   ?.title}-{section.sectionCode}
               </option>
             {/each}
           </select>
+
           <span class="select-caret">
             <svg
               width="14"
@@ -187,6 +193,7 @@
           <label class="field-label"
             >Enrollment Status <span class="req">*</span></label
           >
+
           <div class="status-pills">
             {#each Object.entries(statusMeta) as [val, meta]}
               <button
@@ -196,15 +203,15 @@
                 style={$form.status === val
                   ? `background:${meta.color}; border-color:${meta.dot}33; color:${meta.dot};`
                   : ""}
-                // onclick={() => ($form.status = val)}
               >
-                <input type="hidden" name="status" bind:value={$form.status} />
+                <!-- <input type="hidden" name="status" bind:value={$form.status} /> -->
                 <span class="status-pill-dot" style={`background:${meta.dot};`}
                 ></span>
                 {meta.label}
               </button>
             {/each}
           </div>
+
         </div>
       {/if}
 

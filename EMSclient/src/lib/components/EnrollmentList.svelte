@@ -4,6 +4,7 @@
   import EnrollmentRecord from "./EnrollmentRecord.svelte";
 
   interface Props {
+    onUpdateStatus?: (id: number, status: string) => void;
     onDeleteEnrollment?: (id: number) => void;
     onEnrollCourse?: (id: number) => void;
     onShowEnrollment?: (id: number) => void;
@@ -11,6 +12,7 @@
   }
 
   let {
+    onUpdateStatus,
     onDeleteEnrollment,
     onEnrollCourse,
     onShowEnrollment,
@@ -121,6 +123,7 @@
           <EnrollmentRecord
             enrollment={enrollment as any}
             onDelete={onDeleteEnrollment}
+            onUpdateStatus={onUpdateStatus}
             onEnroll={onEnrollCourse}
             onShow={onShowEnrollment}
           />
@@ -153,8 +156,7 @@
   .page {
     font-family: "DM Sans", sans-serif;
     min-height: 100vh;
-    background-color: 
-#05101f;
+    background-color: #05101f;
     background-image: radial-gradient(
         ellipse 70% 50% at 10% -5%,
         rgba(14, 60, 120, 0.45) 0%,
@@ -225,8 +227,7 @@
     font-style: italic;
     font-size: clamp(2rem, 4vw, 3.25rem);
     font-weight: 400;
-    color: 
-#ffffff;
+    color: #ffffff;
     line-height: 1.05;
     letter-spacing: -0.02em;
     margin: 0 0 0.6rem;
@@ -245,9 +246,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: linear-gradient(135deg, 
-#1e4db7, 
-#0f3298);
+    background: linear-gradient(135deg, #1e4db7, #0f3298);
     color: white;
     text-decoration: none;
     border: none;
@@ -338,19 +337,16 @@
   .stat-num {
     font-family: "DM Serif Display", serif;
     font-size: 3rem;
-    color: 
-#ffffff;
+    color: #ffffff;
     line-height: 1;
     letter-spacing: -0.03em;
   }
 
   .stat-num.confirmed {
-    color: 
-#4ade80;
+    color: #4ade80;
   }
   .stat-num.pending {
-    color: 
-#fbbf24;
+    color: #fbbf24;
   }
 
   /* ── Controls ────────────────────────────────────── */
@@ -402,8 +398,7 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 0.8rem 1rem 0.8rem 2.75rem;
-    color: 
-#e8f0ff;
+    color: #e8f0ff;
     font-family: "DM Sans", sans-serif;
     font-size: 0.875rem;
     outline: none;
@@ -452,9 +447,7 @@
   }
 
   .filter-pill.active {
-    background: linear-gradient(135deg, 
-#1e4db7, 
-#0f3298);
+    background: linear-gradient(135deg, #1e4db7, #0f3298);
     color: white;
     box-shadow: 0 2px 12px rgba(30, 77, 183, 0.4);
   }
@@ -487,8 +480,7 @@
     width: 52px;
     height: 52px;
     border: 3px solid rgba(30, 77, 183, 0.15);
-    border-top-color: 
-#3b6fd4;
+    border-top-color: #3b6fd4;
     border-radius: 50%;
     animation: spin 0.75s linear infinite;
   }
@@ -537,8 +529,7 @@
     font-family: "DM Serif Display", serif;
     font-style: italic;
     font-size: 1.75rem;
-    color: 
-#ffffff;
+    color: #ffffff;
     margin: 0 0 0.5rem;
     letter-spacing: -0.02em;
   }

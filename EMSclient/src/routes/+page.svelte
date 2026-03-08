@@ -16,7 +16,8 @@
   let { data } = $props();
 
   $effect(() => {
-    if ((data as any)?.enrollments) enrollmentsStore.set((data as any).enrollments); // use server data
+    if ((data as any)?.enrollments)
+      enrollmentsStore.set((data as any).enrollments); // use server data
     isLoading = false;
   });
 
@@ -47,29 +48,43 @@
     }
   };
 
+  const handleUpdateStatus = async (enrollmentId: number, status: string) => {
+    const formData = new FormData();
+    formData.set("enrollmentId", enrollmentId.toString());
+    formData.set("status", status);
+    const res = await fetch("?/update", { method: "POST", body: formData });
+    if (res.ok) {
+      // Optionally update local store
+    }
+  };
+
   // Client side data fetching
   onMount(async () => {
     try {
-      debugger
+      debugger;
       if (data?.token) {
         apiClient.setAccessToken(data.token);
       }
 
       // 1. Get current student ID
-      const meResponse = await apiClient.get<StudentResponse>("/students/profile");
+      const meResponse =
+        await apiClient.get<StudentResponse>("/students/profile");
       const studentId = meResponse?.studentId;
 
       if (studentId) {
         // 2. Fetch enrollments
-        debugger
-        const enrollments = await apiClient.get<EnrollmentResponse[]>(`/enrollments/my/${studentId}`);
+        debugger;
+        const enrollments = await apiClient.get<EnrollmentResponse[]>(
+          `/enrollments/my/${studentId}`,
+        );
         enrollmentsStore.set(enrollments);
 
         dashboardStats.activeCourses = enrollments.length;
         // Calculate units safely based on available credits or units fields
-        debugger
+        debugger;
         dashboardStats.enrolledUnits = enrollments.reduce(
-          (acc: number, curr: any) => acc + (curr.section?.course?.credits || curr.units || 0),
+          (acc: number, curr: any) =>
+            acc + (curr.section?.course?.credits || curr.units || 0),
           0,
         );
       }
@@ -252,7 +267,8 @@
             {isLoading}
             onDeleteEnrollment={(id: number) => handleDelete(id)}
             onEnrollCourse={handleEnroll}
-            onShowEnrollment={(enrollmentId : number) => handleShow(enrollmentId)}
+            onShowEnrollment={(enrollmentId: number) =>
+              handleShow(enrollmentId)}
           />
         {/if}
       </div>

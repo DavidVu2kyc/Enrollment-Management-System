@@ -39,7 +39,6 @@ export interface CreateEnrollmentRequest {
 
 export interface UpdateEnrollmentRequest {
 	status?: 'PENDING' | 'ENROLLED' | 'DROPPED'| 'CANCELLED';
-	isEnrolled?: boolean;
 }
 
 // Filter state

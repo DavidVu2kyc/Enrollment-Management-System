@@ -7,9 +7,10 @@
 
   interface Props {
     enrollment: Enrollment;
-    onDelete?: (enrollmentId: number) => void;
-    onEnroll?: (enrollmentId: number) => void;
-    onShow?: (enrollmentId: number) => void;
+    onUpdateStatus : (id: number, status: string) => void;
+    onDelete?: (enrollmentId: number) => Promise<void>;
+    onEnroll?: (enrollmentId: number) => Promise<void>;
+    onShow?: (enrollmentId: number) => Promise<void>;
   }
 
   let { enrollment, onDelete, onEnroll, onShow }: Props = $props();
@@ -35,7 +36,7 @@
   const handleEnroll = async () => {
     isConfirming = true;
     try {
-      if (onEnroll) await onEnroll(enrollment.enrollmentId);
+      if (onEnroll) await onUpdateStatus(enrollmentId, 'ENROLLED');
     } finally {
       isConfirming = false;
     }
@@ -120,22 +121,6 @@
               <path stroke-linecap="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
             </svg>
             <span>{instructor}</span>
-          </div>
-        {/if}
-        {#if schedule}
-          <div class="detail-chip">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2"/><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18"/>
-            </svg>
-            <span>{schedule}</span>
-          </div>
-        {/if}
-        {#if room}
-          <div class="detail-chip">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-            </svg>
-            <span>{room}</span>
           </div>
         {/if}
       </div>

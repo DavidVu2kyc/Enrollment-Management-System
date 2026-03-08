@@ -25,6 +25,7 @@ public class SectionController {
     }
 
     // get section details by sectionId
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{sectionId}")
     public ResponseEntity<SectionResponse> getById(@PathVariable Long sectionId) {
         return ResponseEntity.ok(sectionService.getById(sectionId));

@@ -8,6 +8,7 @@ import com.obu.ems.service.EnrollmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,17 +25,18 @@ public class EnrollmentController {
     private final EnrollmentService enrollmentService;
 
     @PostMapping
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<EnrollmentResponse> create(@Valid @RequestBody EnrollmentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(enrollmentService.enlistStudent(request.getStudentId(), request));
     }
 
     @GetMapping("/my/{studentId}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
     public ResponseEntity<List<EnrollmentResponse>> getMyEnrollments(
             @PathVariable Long studentId) {
-        return ResponseEntity.ok(enrollmentService.getMyEnrollments(studentId)) ;
+        return ResponseEntity.ok(enrollmentService.getMyEnrollments(studentId));
     }
-
 
     @PutMapping("/{enrollmentId}/status")
     public ResponseEntity<EnrollmentResponse> updateStatus(@PathVariable Long enrollmentId,

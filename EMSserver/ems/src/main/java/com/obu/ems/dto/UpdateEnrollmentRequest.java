@@ -8,4 +8,5 @@ import lombok.Data;
 public class UpdateEnrollmentRequest {
     @NotNull
     private Enrollment.Status status;
+    private boolean isEnrolled;
 }
