@@ -9,32 +9,33 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/terms")
 @RequiredArgsConstructor
 public class TermDegreeController {
 
-     private final TermService termService;
+    private final TermService termService;
     private final DegreeService degreeService;
 
-     @GetMapping("/api/terms")
-     public ResponseEntity<List<TermResponse>> getAllTerms() {
-         return ResponseEntity.ok(termService.getAll());
-     }
+    @GetMapping
+    public ResponseEntity<List<TermResponse>> getAllTerms() {
+        return ResponseEntity.ok(termService.getAll());
+    }
 
-//     returrn active terms
-     @GetMapping("/api/terms/active")
-     public ResponseEntity<TermResponse> getActiveTerm(Boolean active) {
-         return ResponseEntity.ok(termService.getActiveTerm(active));
-     }
+    // returrn active terms
+    @GetMapping("/active")
+    public ResponseEntity<TermResponse> getActiveTerm(Boolean active) {
+        return ResponseEntity.ok(termService.getActiveTerm(active));
+    }
 
-    //    List all degrees
-    @GetMapping("/api/degrees")
+    // List all degrees
+    @GetMapping("/degrees")
     public ResponseEntity<List<DegreeResponse>> getAllDegrees() {
         return ResponseEntity.ok(degreeService.getAll());
     }
 
-    //    Get a list of courses associated withj degree
-     @GetMapping("/api/degrees/{degreeId}/courses")
-     public ResponseEntity<List<CourseResponse>> getCoursesByDegree(@PathVariable Long degreeId) {
-         return ResponseEntity.ok(degreeService.getCoursesByDegree(degreeId));
-     }
+    // Get a list of courses associated withj degree
+    @GetMapping("/degrees/{degreeId}/courses")
+    public ResponseEntity<List<CourseResponse>> getCoursesByDegree(@PathVariable Long degreeId) {
+        return ResponseEntity.ok(degreeService.getCoursesByDegree(degreeId));
+    }
 }

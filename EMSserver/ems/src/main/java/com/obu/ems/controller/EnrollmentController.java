@@ -43,8 +43,7 @@ public class EnrollmentController {
     }
 
     @DeleteMapping("/{enrollmentId}")
-    public ResponseEntity<EnrollmentResponse> drop(@PathVariable Long enrollmentId,
-            @RequestParam Long studentId) {
+    public ResponseEntity<EnrollmentResponse> drop(@PathVariable Long enrollmentId, @RequestParam Long studentId) {
         return ResponseEntity.ok(enrollmentService.drop(studentId, enrollmentId));
     }
 }

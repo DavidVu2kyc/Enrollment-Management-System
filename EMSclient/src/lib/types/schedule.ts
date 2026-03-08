@@ -2,7 +2,7 @@ import type { Room } from "./room";
 
 // Schedule
 export interface Schedule {
-	id: string;
+	scheduleId: number;
 	sectionId: string;
 	dayOfWeek: string; // MONDAY, TUESDAY, etc.
 	startTime: string; // HH:mm format

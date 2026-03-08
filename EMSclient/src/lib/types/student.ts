@@ -7,14 +7,13 @@ export interface DegreeResponse {
 
 /** Legacy - kept for other usages */
 export interface Degree {
-  degree: number;
-  code: string;
+  degreeId: number;
   name: string;
   description?: string;
 }
 
 export interface Student {
-  id: number;
+  studentId: number;
   studentNumber: string;
   firstName: string;
   lastName: string;

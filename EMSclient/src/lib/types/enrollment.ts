@@ -1,9 +1,10 @@
+import type { SectionResponse } from "$lib/server/section";
 import type { Section } from "./section";
-import type { Degree } from "./student";
+import type { Degree, Student, StudentResponse } from "./student";
 
 // Course
 export interface Course {
-	courseId: string;
+	courseId: number ;
 	code: string;
 	title: string;
 	units: number;
@@ -12,9 +13,9 @@ export interface Course {
 
 // Enrollment
 export interface Enrollment {
-	enrollmentId: string;
-	studentId: string;
-	sectionId: string;
+	enrollmentId: number
+	studentId: number;
+	sectionId: number;
 	status: 'PENDING' | 'ENROLLED' | 'DROPPED'| 'CANCELLED';
 	course?: Course;
 	section?: Section;
@@ -22,8 +23,18 @@ export interface Enrollment {
 	isEnrolled: boolean;
 }
 
+export interface EnrollmentResponse {
+	enrollmentId: number
+	student: StudentResponse;
+	section: SectionResponse;
+	status: 'PENDING' | 'ENROLLED' | 'DROPPED'| 'CANCELLED';
+	enrolledAt: string;
+	message?: string;
+
+}
+
 export interface CreateEnrollmentRequest {
-	sectionId: string;
+	sectionId: number;
 }
 
 export interface UpdateEnrollmentRequest {

@@ -28,7 +28,6 @@
     feedback = null;
 
     try {
-      debugger
       const { apiClient } = await import("$lib/api/client");
 
       await apiClient.put(`/students/${data.profile.studentId}`, {
@@ -37,7 +36,7 @@
       });
 
       const current = userStore.current;
-      if (current) userStore.update({ ...current, firstName, lastName });
+      if (current) userStore.update({ ...current});
 
       feedback = { msg: "Profile updated successfully.", type: "success" };
 

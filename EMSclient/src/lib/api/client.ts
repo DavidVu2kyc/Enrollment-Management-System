@@ -3,7 +3,7 @@ import type { ApiError } from "$lib/types/apierror";
 const API_BASE_URL = "http://localhost:8081/api";
 
 export class ApiClient {
-  private accessToken: string | null = null;
+  private jwt:  string | null = null;
   private fetchFn: typeof fetch;
 
   constructor(fetchFn?: typeof fetch) {
@@ -14,7 +14,7 @@ export class ApiClient {
   }
 
   setAccessToken(token: string | null) {
-    this.accessToken = token;
+    this.jwt = token;
   }
 
   private async request<T>(
@@ -28,9 +28,9 @@ export class ApiClient {
       ...options.headers,
     };
 
-    if (this.accessToken) {
+    if (this.jwt){
       (headers as Record<string, string>)["Authorization"] =
-        `Bearer ${this.accessToken}`;
+        `Bearer ${this.jwt}`;
     }
 
     debugger
@@ -90,10 +90,10 @@ export const apiClient = new ApiClient();
 
 // Server-side API client factory
 export function createServerApiClient(
-  accessToken: string | null,
+  jwt: string | null,
   customFetch?: typeof fetch,
 ): ApiClient {
   const client = new ApiClient(customFetch);
-  client.setAccessToken(accessToken);
+  client.setAccessToken(jwt);
   return client;
 }

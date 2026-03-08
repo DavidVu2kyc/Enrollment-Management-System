@@ -5,13 +5,13 @@ import type { Term } from "./term";
 
 // Section
 export interface Section {
-	sectionId: string;
+	sectionId: number;
 	sectionCode: string;
 	course?:Course;
 	term?:Term;
 	room?:Room ;
 	schedule?:Schedule;
-	facultyName?:string;
-	maxSeats?:number;
+	facultyName :string;
+	maxSeats:number;
 	enrolledCount: number;
 }

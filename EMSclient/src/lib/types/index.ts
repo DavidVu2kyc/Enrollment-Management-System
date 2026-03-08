@@ -1,4 +1,8 @@
+import type { SectionResponse } from "$lib/server/section";
+import type { Course } from "./enrollment";
 import type { Room } from "./room";
+import type { Section } from "./section";
+import type { StudentResponse } from "./student";
 
 // User types
 export interface User {
@@ -63,5 +67,15 @@ export interface ApiResponse<T> {
 	message?: string;
 	error?: string;
 }
+
+export interface EnrollmentResponse {
+	enrollmentId: number;	
+	student: StudentResponse
+	section: SectionResponse
+	status: string;
+	enrolledAt: string;
+	message: string ;
+}
+
 
 
