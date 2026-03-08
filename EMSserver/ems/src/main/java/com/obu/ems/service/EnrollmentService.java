@@ -82,9 +82,8 @@ public class EnrollmentService {
 
     // get the current student's enrollment list ( EAF)
     @Transactional
-    public List<EnrollmentResponse> getMyEnrollments(Long studentId, Long termId) {
-        List<Enrollment> enrollments = enrollmentRepository
-                .findByStudent_StudentIdAndSection_Term_TermId(studentId, termId);
+    public List<EnrollmentResponse> getMyEnrollments(Long studentId) {
+        List<Enrollment> enrollments = enrollmentRepository.findByStudent_StudentId(studentId);
 
         if (enrollments.isEmpty()) {
             throw new ResourceNotFoundException("No enrollments found for the given student and term.");
@@ -95,12 +94,6 @@ public class EnrollmentService {
                 .toList();
     }
 
-    // Get enrollment detail
-    public EnrollmentResponse getById(Long enrollmentId) {
-        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
-        return enrollmentMapper.mapToEnrollmentResponse(enrollment);
-    }
 
     // update enrollment status - ADMIN ROLE only
     public EnrollmentResponse updateStatus(Long enrollmentId, UpdateEnrollmentRequest updateEnrollmentRequest) {

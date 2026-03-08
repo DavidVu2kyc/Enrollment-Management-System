@@ -20,9 +20,10 @@ public class TermDegreeController {
          return ResponseEntity.ok(termService.getAll());
      }
 
+//     returrn active terms
      @GetMapping("/api/terms/active")
-     public ResponseEntity<TermResponse> getActiveTerm() {
-         return ResponseEntity.ok(termService.getActiveTerm());
+     public ResponseEntity<TermResponse> getActiveTerm(Boolean active) {
+         return ResponseEntity.ok(termService.getActiveTerm(active));
      }
 
     //    List all degrees
@@ -31,9 +32,9 @@ public class TermDegreeController {
         return ResponseEntity.ok(degreeService.getAll());
     }
 
-    //    Get courses by id
-     @GetMapping("/api/degrees/{id}/courses")
-     public ResponseEntity<List<CourseResponse>> getCoursesByDegree(@PathVariable Long id) {
-         return ResponseEntity.ok(degreeService.getCoursesByDegree(id));
+    //    Get a list of courses associated withj degree
+     @GetMapping("/api/degrees/{degreeId}/courses")
+     public ResponseEntity<List<CourseResponse>> getCoursesByDegree(@PathVariable Long degreeId) {
+         return ResponseEntity.ok(degreeService.getCoursesByDegree(degreeId));
      }
 }

@@ -28,6 +28,7 @@ export interface Student {
 
 /** Matches backend StudentResponse DTO exactly */
 export interface StudentResponse {
+  degreeId: number;
   studentId: number;
   userId?: number;
   studentNumber: string;

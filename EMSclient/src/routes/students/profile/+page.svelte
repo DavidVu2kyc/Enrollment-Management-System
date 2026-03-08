@@ -28,6 +28,7 @@
     feedback = null;
 
     try {
+      debugger
       const { apiClient } = await import("$lib/api/client");
 
       await apiClient.put(`/students/${data.profile.studentId}`, {
