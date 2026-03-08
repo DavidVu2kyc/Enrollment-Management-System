@@ -83,6 +83,7 @@
               >{$loginErrors.username}</span
             >{/if}
         </div>
+
         <!-- Password -->
         <div class="field">
           <label for="password">Password</label>
@@ -113,6 +114,7 @@
               >{$loginErrors.password}</span
             >{/if}
         </div>
+        
         {#if $loginMessage}<p class="message">{$loginMessage}</p>{/if}
         <div class="actions">
           <button type="submit" disabled={$loginDelayed}>

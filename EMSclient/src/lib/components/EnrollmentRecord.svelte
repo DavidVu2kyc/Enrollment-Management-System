@@ -1,29 +1,31 @@
 <script lang="ts">
-  import { fade } from "svelte/transition";
+  import { fade, fly, scale } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
   import Button from "./Button.svelte";
   import Modal from "./Modal.svelte";
-  import type { Enrollment } from "$lib/types";
+  import type { Enrollment } from "$lib/types/enrollment";
 
   interface Props {
     enrollment: Enrollment;
-    onDelete?: (id: string) => void;
-    onEnroll?: (id: string) => void;
+    onDelete?: (enrollmentId: number) => void;
+    onEnroll?: (enrollmentId: number) => void;
+    onShow?: (enrollmentId: number) => void;
   }
 
-  let { enrollment, onDelete, onEnroll }: Props = $props();
+  let { enrollment, onDelete, onEnroll, onShow }: Props = $props();
   let showDeleteModal = $state(false);
   let isDeleting = $state(false);
+  let isConfirming = $state(false);
+  let hovered = $state(false);
 
-  const handleDeleteClick = () => {
-    showDeleteModal = true;
-  };
+  const isEnrolled = $derived(enrollment.status === "ENROLLED");
+
+  const handleDeleteClick = () => { showDeleteModal = true; };
 
   const handleConfirmDelete = async () => {
     isDeleting = true;
     try {
-      if (onDelete) {
-        await onDelete(enrollment.id);
-      }
+      if (onDelete) await onDelete(enrollment.enrollmentId);
     } finally {
       isDeleting = false;
       showDeleteModal = false;
@@ -31,244 +33,665 @@
   };
 
   const handleEnroll = async () => {
-    if (onEnroll) {
-      await onEnroll(enrollment.id);
+    isConfirming = true;
+    try {
+      if (onEnroll) await onEnroll(enrollment.enrollmentId);
+    } finally {
+      isConfirming = false;
     }
   };
+
+  const credits = enrollment.section?.course?.credits ?? enrollment.units ?? 0;
+  const instructor = enrollment.section?.instructor ?? null;
+  const schedule = enrollment.section?.schedule ?? null;
+  const room = enrollment.section?.room ?? null;
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-  class="bg-white dark:bg-white/5 rounded-[32px] shadow-xl hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-white/10 relative overflow-hidden group p-8"
-  transition:fade
+  class="card"
+  class:enrolled={isEnrolled}
+  class:pending={!isEnrolled}
+  class:is-hovered={hovered}
+  role="article"
+  aria-label="{enrollment.section?.course?.title} enrollment record"
+  onmouseenter={() => hovered = true}
+  onmouseleave={() => hovered = false}
+  in:fly={{ y: 12, duration: 380, easing: cubicOut }}
 >
-  <!-- Decorative Accent -->
-  <div
-    class="absolute top-0 right-0 w-32 h-32 bg-blue-900/5 dark:bg-blue-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700"
-  ></div>
+  <!-- Status stripe -->
+  <div class="status-stripe" class:stripe-enrolled={isEnrolled} class:stripe-pending={!isEnrolled}></div>
 
-  <div class="flex flex-col gap-8 relative z-10">
-    <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
-      <div class="flex-1 space-y-3">
-        <div class="flex items-center gap-3">
-          <span
-            class="text-[10px] font-black tracking-[0.2em] uppercase text-white bg-blue-900 px-3 py-1 rounded-lg shadow-lg rotate-[-1deg] group-hover:rotate-0 transition-transform"
-          >
-            {enrollment.section?.courseCode}
-          </span>
-          <span
-            class="text-[10px] font-black uppercase tracking-widest text-gray-400"
-            >Section {enrollment.section?.sectionNumber}</span
-          >
+  <!-- Card body -->
+  <div class="card-inner">
+
+    <!-- Top row: course info + status badge -->
+    <div class="card-top">
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <div
+        class="course-info"
+        class:clickable={!!onShow}
+        onclick={() => onShow && onShow(enrollment.enrollmentId)}
+        role={onShow ? "button" : undefined}
+        tabindex={onShow ? 0 : undefined}
+        onkeydown={(e) => e.key === "Enter" && onShow && onShow(enrollment.enrollmentId)}
+      >
+        <div class="course-meta">
+          <span class="course-code">{enrollment.section?.course?.code ?? "—"}</span>
+          <span class="meta-sep">·</span>
+          <span class="section-code">§ {enrollment.section?.sectionCode ?? "—"}</span>
+          {#if credits}
+            <span class="meta-sep">·</span>
+            <span class="credits">{credits} {credits === 1 ? "unit" : "units"}</span>
+          {/if}
         </div>
-        <h3
-          class="text-3xl font-black text-blue-900 dark:text-white tracking-tighter uppercase italic leading-none"
-        >
-          {enrollment.section?.courseName || "General Subject"}
+
+        <h3 class="course-title">
+          {enrollment.section?.course?.title ?? "General Subject"}
         </h3>
+
+        {#if enrollment.section?.course?.description}
+          <p class="course-desc">{enrollment.section.course.description}</p>
+        {/if}
       </div>
 
-      <div class="flex flex-wrap md:flex-col items-start md:items-end gap-3">
-        {#if enrollment.status === "ENROLLED" || enrollment.isEnrolled}
-          <div
-            class="inline-flex items-center px-4 py-1.5 rounded-2xl bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 text-[10px] font-black uppercase tracking-widest"
-          >
-            <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"
-            ></span>
+      <!-- Status badge -->
+      <div class="badge-wrap">
+        {#if isEnrolled}
+          <span class="badge badge-enrolled" in:scale={{ duration: 250 }}>
+            <span class="badge-dot"></span>
             Confirmed
-          </div>
+          </span>
         {:else}
-          <div
-            class="inline-flex items-center px-4 py-1.5 rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-[10px] font-black uppercase tracking-widest"
-          >
-            <span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
+          <span class="badge badge-pending" in:scale={{ duration: 250 }}>
+            <span class="badge-dot"></span>
             Pending
-          </div>
-        {/if}
-
-        {#if enrollment.scheduledConflict}
-          <div
-            class="inline-flex items-center px-4 py-1.5 rounded-2xl bg-red-600 text-white shadow-lg text-[10px] font-black uppercase tracking-widest"
-          >
-            <svg
-              class="w-3.5 h-3.5 mr-2"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              ><path
-                fill-rule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              ></path></svg
-            >
-            Conflict Detected
-          </div>
+          </span>
         {/if}
       </div>
     </div>
 
-    <!-- Details Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {#if enrollment.section?.schedules && enrollment.section.schedules.length > 0}
-        <div
-          class="bg-gray-50 dark:bg-white/5 rounded-3xl p-5 border border-gray-100 dark:border-white/5"
-        >
-          <p
-            class="text-[9px] font-black uppercase tracking-[0.3em] text-blue-900/40 dark:text-blue-300/40 mb-4"
-          >
-            Standard Schedule
-          </p>
-          <div class="space-y-3">
-            {#each enrollment.section.schedules as schedule}
-              <div class="flex items-center justify-between">
-                <span
-                  class="text-xs font-black uppercase text-blue-900 dark:text-blue-400"
-                  >{schedule.dayOfWeek}</span
-                >
-                <span class="text-xs font-bold text-gray-500"
-                  >{schedule.startTime} — {schedule.endTime}</span
-                >
-              </div>
-            {/each}
+    <!-- Details row: instructor / schedule / room -->
+    {#if instructor || schedule || room}
+      <div class="details-row">
+        {#if instructor}
+          <div class="detail-chip">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
+            </svg>
+            <span>{instructor}</span>
           </div>
-        </div>
-      {/if}
-
-      <div class="space-y-4">
-        <div
-          class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5"
-        >
-          <div
-            class="w-10 h-10 bg-white dark:bg-white/10 text-blue-900 dark:text-blue-200 rounded-lg flex items-center justify-center shadow-sm"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              viewBox="0 0 24 24"
-              ><path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              /></svg
-            >
+        {/if}
+        {#if schedule}
+          <div class="detail-chip">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+            <span>{schedule}</span>
           </div>
-          <div>
-            <p
-              class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1"
-            >
-              Campus Room
-            </p>
-            <p
-              class="text-xs font-bold text-gray-900 dark:text-white uppercase truncate"
-            >
-              {enrollment.section?.room
-                ? `${enrollment.section.room.building} ${enrollment.section.room.roomNumber}`
-                : "Online Hall"}
-            </p>
+        {/if}
+        {#if room}
+          <div class="detail-chip">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span>{room}</span>
           </div>
-        </div>
-        <div
-          class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5"
-        >
-          <div
-            class="w-10 h-10 bg-white dark:bg-white/10 text-indigo-900 dark:text-indigo-200 rounded-lg flex items-center justify-center shadow-sm"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              viewBox="0 0 24 24"
-              ><path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              /></svg
-            >
-          </div>
-          <div>
-            <p
-              class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1"
-            >
-              Semester Term
-            </p>
-            <p
-              class="text-xs font-bold text-gray-900 dark:text-white uppercase"
-            >
-              {enrollment.section?.term || "FALL"}
-              {enrollment.section?.year || 2026}
-            </p>
-          </div>
-        </div>
+        {/if}
       </div>
-    </div>
+    {/if}
 
     <!-- Actions -->
-    <div
-      class="flex items-center gap-3 pt-6 border-t border-gray-100 dark:border-white/5 mt-auto"
-    >
-      {#if !enrollment.isEnrolled && enrollment.status !== "ENROLLED"}
-        <div class="flex-1">
-          <Button
-            variant="success"
-            size="md"
-            onclick={handleEnroll}
-            style="width: 100%"
-          >
+    <div class="actions">
+      {#if !isEnrolled}
+        <button
+          class="action-btn btn-confirm"
+          onclick={handleEnroll}
+          disabled={isConfirming}
+          aria-busy={isConfirming}
+        >
+          {#if isConfirming}
+            <span class="btn-spinner"></span>
+            Confirming…
+          {:else}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
             Confirm Registration
-          </Button>
-        </div>
+          {/if}
+        </button>
       {/if}
 
-      <div
-        class={!enrollment.isEnrolled && enrollment.status !== "ENROLLED"
-          ? "flex-1"
-          : "w-full"}
+      <button
+        class="action-btn btn-drop"
+        class:btn-drop-solo={isEnrolled}
+        onclick={handleDeleteClick}
+        disabled={isDeleting}
+        aria-label="Drop {enrollment.section?.course?.title}"
       >
-        <Button
-          variant="secondary"
-          size="md"
-          onclick={handleDeleteClick}
-          style="width: 100%"
-        >
-          Drop Course
-        </Button>
-      </div>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+        Drop Course
+      </button>
     </div>
   </div>
 </div>
 
-<!-- Modal confirmed / drop -->
-<Modal
-  isOpen={showDeleteModal}
-  title="Academic Withdrawal"
-  type="confirm"
-  confirmText="Withdraw Permanently"
-  cancelText="Cancel Action"
-  onConfirm={handleConfirmDelete}
-  onCancel={() => (showDeleteModal = false)}
->
-  <div class="space-y-6">
-    <p class="text-sm font-medium text-gray-500 leading-relaxed">
-      You are about to withdraw from <span
-        class="text-blue-900 dark:text-white font-black uppercase italic tracking-tighter"
-        >{enrollment.section?.courseName}</span
-      >. This action is immediate and may affect your graduation schedule.
-    </p>
+<!-- ── WITHDRAWAL MODAL ── -->
+{#if showDeleteModal}
+  <div
+    class="modal-backdrop"
+    in:fade={{ duration: 180 }}
+    out:fade={{ duration: 150 }}
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
     <div
-      class="bg-red-50 dark:bg-red-500/10 p-6 rounded-2xl border border-red-100 dark:border-red-500/20"
+      class="modal"
+      in:fly={{ y: 20, duration: 280, easing: cubicOut }}
+      out:fly={{ y: 10, duration: 180 }}
     >
-      <div class="flex items-center gap-3 mb-2">
-        <div class="w-1.5 h-1.5 rounded-full bg-red-600"></div>
-        <span
-          class="text-xs font-black uppercase tracking-widest text-red-700 dark:text-red-400"
-          >Withdrawal Impact</span
-        >
+      <!-- Modal header -->
+      <div class="modal-header">
+        <div class="modal-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 id="modal-title" class="modal-title">Drop Course?</h2>
+          <p class="modal-subtitle">This action cannot be undone</p>
+        </div>
       </div>
-      <p class="text-xs font-bold text-red-900 dark:text-red-200">
-        This will remove your reservation for {enrollment.section?.courseCode} -
-        Section {enrollment.section?.sectionNumber}.
-      </p>
+
+      <!-- Course summary -->
+      <div class="modal-course">
+        <div class="modal-course-code">{enrollment.section?.course?.code} · § {enrollment.section?.sectionCode}</div>
+        <div class="modal-course-name">{enrollment.section?.course?.title}</div>
+      </div>
+
+      <!-- Warning -->
+      <div class="modal-warning">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:1px">
+          <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v4m0 4h.01"/>
+        </svg>
+        <p>Dropping this course will remove your seat reservation and may affect your academic standing.</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-actions">
+        <button
+          class="modal-btn modal-cancel"
+          onclick={() => showDeleteModal = false}
+          disabled={isDeleting}
+        >
+          Keep Course
+        </button>
+        <button
+          class="modal-btn modal-confirm"
+          onclick={handleConfirmDelete}
+          disabled={isDeleting}
+          aria-busy={isDeleting}
+        >
+          {#if isDeleting}
+            <span class="btn-spinner spinner-red"></span>
+            Withdrawing…
+          {:else}
+            Drop Course
+          {/if}
+        </button>
+      </div>
     </div>
   </div>
-</Modal>
+{/if}
+
+<style>
+  /* ── TOKENS ── */
+  :root {
+    --c-surface:    rgba(10, 20, 44, 0.92);
+    --c-border:     rgba(255, 255, 255, 0.07);
+    --c-border-hi:  rgba(255, 255, 255, 0.12);
+    --c-text-1:     #eef2ff;
+    --c-text-2:     rgba(160, 190, 235, 0.65);
+    --c-text-3:     rgba(100, 140, 205, 0.45);
+    --c-blue:       #3d6ff8;
+    --c-blue-lo:    rgba(61, 111, 248, 0.1);
+    --c-blue-mid:   rgba(61, 111, 248, 0.22);
+    --c-green:      #34d399;
+    --c-green-lo:   rgba(52, 211, 153, 0.1);
+    --c-amber:      #fbbf24;
+    --c-amber-lo:   rgba(251, 191, 36, 0.1);
+    --c-red:        #f87171;
+    --c-red-lo:     rgba(248, 113, 113, 0.1);
+    --c-red-mid:    rgba(248, 113, 113, 0.2);
+    --ease-spring:  cubic-bezier(0.34, 1.4, 0.64, 1);
+    --ease-out:     cubic-bezier(0.22, 1, 0.36, 1);
+    --font:         "Outfit", sans-serif;
+    --font-mono:    "JetBrains Mono", monospace;
+  }
+
+  /* ── CARD ── */
+  .card {
+    font-family: var(--font);
+    position: relative;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 20px;
+    overflow: hidden;
+    backdrop-filter: blur(16px);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s var(--ease-out);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .card:hover {
+    border-color: var(--c-border-hi);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+    transform: translateY(-2px);
+  }
+
+  .card.enrolled { --stripe-color: var(--c-green); }
+  .card.pending  { --stripe-color: var(--c-amber); }
+
+  /* Left status stripe */
+  .status-stripe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    transition: width 0.25s var(--ease-spring);
+  }
+
+  .stripe-enrolled { background: linear-gradient(180deg, var(--c-green), rgba(52,211,153,0.3)); }
+  .stripe-pending  { background: linear-gradient(180deg, var(--c-amber), rgba(251,191,36,0.3)); }
+
+  .card:hover .status-stripe { width: 4px; }
+
+  .card-inner {
+    padding: 1.4rem 1.5rem 1.4rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* ── TOP ROW ── */
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .course-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .course-info.clickable {
+    cursor: pointer;
+    border-radius: 10px;
+    transition: opacity 0.15s;
+  }
+
+  .course-info.clickable:hover { opacity: 0.8; }
+
+  .course-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .course-code {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 500;
+    color: var(--c-blue);
+    background: var(--c-blue-lo);
+    border: 1px solid var(--c-blue-mid);
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .section-code,
+  .credits {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--c-text-3);
+    letter-spacing: 0.05em;
+  }
+
+  .meta-sep {
+    color: var(--c-text-3);
+    font-size: 0.7rem;
+    opacity: 0.5;
+  }
+
+  .course-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--c-text-1);
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .course-desc {
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: var(--c-text-2);
+    line-height: 1.55;
+    margin: 0.3rem 0 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ── BADGE ── */
+  .badge-wrap { flex-shrink: 0; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+  }
+
+  .badge-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .badge-enrolled {
+    background: var(--c-green-lo);
+    color: var(--c-green);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+  }
+
+  .badge-enrolled .badge-dot {
+    background: var(--c-green);
+    box-shadow: 0 0 6px var(--c-green);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  .badge-pending {
+    background: var(--c-amber-lo);
+    color: var(--c-amber);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+  }
+
+  .badge-pending .badge-dot { background: var(--c-amber); }
+
+  /* ── DETAIL CHIPS ── */
+  .details-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .detail-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--c-text-2);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--c-border);
+    padding: 0.3rem 0.7rem;
+    border-radius: 8px;
+    letter-spacing: 0.02em;
+  }
+
+  .detail-chip svg { opacity: 0.6; flex-shrink: 0; }
+
+  /* ── ACTIONS ── */
+  .actions {
+    display: flex;
+    gap: 0.6rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--c-border);
+  }
+
+  .action-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: none;
+    border-radius: 11px;
+    padding: 0.65rem 1rem;
+    font-family: var(--font);
+    font-size: 0.73rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-out);
+    white-space: nowrap;
+  }
+
+  .action-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-confirm {
+    background: var(--c-blue);
+    color: #fff;
+    box-shadow: 0 3px 14px rgba(61, 111, 248, 0.3);
+  }
+
+  .btn-confirm:not(:disabled):hover {
+    background: #5580fa;
+    box-shadow: 0 5px 22px rgba(61, 111, 248, 0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-drop {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-2);
+  }
+
+  .btn-drop:not(:disabled):hover {
+    background: var(--c-red-lo);
+    border-color: var(--c-red-mid);
+    color: var(--c-red);
+  }
+
+  .btn-drop-solo {
+    max-width: 160px;
+    margin-left: auto;
+  }
+
+  /* Spinner */
+  .btn-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+    flex-shrink: 0;
+  }
+
+  .spinner-red {
+    border-color: rgba(248,113,113,0.25);
+    border-top-color: var(--c-red);
+  }
+
+  /* ── MODAL ── */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 10, 24, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .modal {
+    background: #0a1628;
+    border: 1px solid var(--c-border-hi);
+    border-radius: 22px;
+    width: 100%;
+    max-width: 420px;
+    padding: 1.75rem;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+    font-family: var(--font);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--c-red-lo);
+    border: 1px solid var(--c-red-mid);
+    color: var(--c-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .modal-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--c-text-1);
+    margin: 0 0 0.2rem;
+    letter-spacing: -0.02em;
+  }
+
+  .modal-subtitle {
+    font-size: 0.72rem;
+    color: var(--c-text-3);
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .modal-course {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--c-border);
+    border-radius: 13px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .modal-course-code {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--c-blue);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.3rem;
+  }
+
+  .modal-course-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--c-text-1);
+    letter-spacing: -0.01em;
+  }
+
+  .modal-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    background: var(--c-red-lo);
+    border: 1px solid var(--c-red-mid);
+    border-radius: 11px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.5rem;
+    color: rgba(248, 113, 113, 0.8);
+  }
+
+  .modal-warning p {
+    font-size: 0.75rem;
+    line-height: 1.55;
+    margin: 0;
+    color: rgba(248, 160, 160, 0.85);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-family: var(--font);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .modal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .modal-cancel {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--c-border);
+    color: var(--c-text-2);
+  }
+
+  .modal-cancel:not(:disabled):hover {
+    background: rgba(255,255,255,0.08);
+    color: var(--c-text-1);
+  }
+
+  .modal-confirm {
+    background: rgba(220, 38, 38, 0.85);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
+  }
+
+  .modal-confirm:not(:disabled):hover {
+    background: rgb(220, 38, 38);
+    box-shadow: 0 6px 24px rgba(220, 38, 38, 0.45);
+    transform: translateY(-1px);
+  }
+
+  /* ── KEYFRAMES ── */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+</style>

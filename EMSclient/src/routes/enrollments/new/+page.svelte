@@ -59,7 +59,7 @@
 <div class="page">
   <div class="content">
     <!-- Back -->
-    <a href="/enrollments" class="back-link">
+    <a href="/" class="back-link">
       <svg
         width="14"
         height="14"
@@ -74,7 +74,7 @@
           d="M19 12H5m7-7l-7 7 7 7"
         />
       </svg>
-      Back to Enrollments
+      Back to Dashboard
     </a>
 
     <!-- Header -->

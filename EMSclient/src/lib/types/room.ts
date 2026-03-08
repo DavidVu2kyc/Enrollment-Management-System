@@ -1,6 +1,6 @@
 // Room
 export interface Room {
-	roomId: string;
+	roomId: number;
 	building: string;
 	roomNumber: string;
 	capacity: number;

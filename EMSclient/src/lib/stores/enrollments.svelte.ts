@@ -1,7 +1,7 @@
-import type { Enrollment } from '$lib/types';
+import type { EnrollmentResponse } from '$lib/types/enrollment';
 
 class EnrollmentsStore {
-	#enrollments = $state<Enrollment[]>([]);
+	#enrollments = $state<EnrollmentResponse[]>([]);
 
 	get all() {
 		return this.#enrollments;
@@ -12,40 +12,38 @@ class EnrollmentsStore {
 	}
 
 	get enrolledCount() {
-		return this.#enrollments.filter((e) => e.status === 'ENROLLED' || e.isEnrolled).length;
+		return this.#enrollments.filter((e) => e.status === 'ENROLLED').length;
 	}
 
 	get pendingCount() {
-		return this.#enrollments.filter((e) => e.status === 'PENDING' || !e.isEnrolled).length;
+		return this.#enrollments.filter((e) => e.status === 'PENDING').length;
 	}
 
 	get pending() {
-		return this.#enrollments.filter((e) => e.status === 'PENDING' || !e.isEnrolled);
+		return this.#enrollments.filter((e) => e.status === 'PENDING');
 	}
 
 	get enrolled() {
-		return this.#enrollments.filter((e) => e.status === 'ENROLLED' || e.isEnrolled);
+		return this.#enrollments.filter((e) => e.status === 'ENROLLED');
 	}
 
-	get conflicted() {
-		return this.#enrollments.filter((e) => e.scheduledConflict);
-	}
-
-	set(enrollments: Enrollment[]) {
+	set(enrollments: EnrollmentResponse[]) {
 		this.#enrollments = enrollments;
 	}
 
-	add(enrollment: Enrollment) {
+	add(enrollment: EnrollmentResponse) {
 		this.#enrollments.push(enrollment);
 	}
 
-	remove(id: string) {
-		this.#enrollments = this.#enrollments.filter((e) => e.id !== id);
+	remove(id: number) {
+		this.#enrollments = this.#enrollments.filter(
+			(e) => e.enrollmentId !== id
+		);
 	}
 
-	update(id: string, enrollment: Partial<Enrollment>) {
+	update(id: number, enrollment: Partial<EnrollmentResponse>) {
 		this.#enrollments = this.#enrollments.map((e) =>
-			e.id === id ? { ...e, ...enrollment } : e
+			e.enrollmentId === id ? { ...e, ...enrollment } : e
 		);
 	}
 

@@ -86,7 +86,7 @@ public class EnrollmentService {
         List<Enrollment> enrollments = enrollmentRepository.findByStudent_StudentId(studentId);
 
         if (enrollments.isEmpty()) {
-            throw new ResourceNotFoundException("No enrollments found for the given student and term.");
+            throw new ResourceNotFoundException("No enrollments found for the given student.");
         }
 
         return enrollments.stream()

@@ -1,4 +1,4 @@
-<!-- HOMEPAGE (ENROLLMENT LIST ) -->
+<!-- HOMEPAGE (ENROLLMENT LIST  Dashboard) -->
 
 <script lang="ts">
   import { onMount } from "svelte";
@@ -6,9 +6,20 @@
   import { enrollmentsStore } from "$lib/stores/enrollments.svelte";
   import { fly, fade } from "svelte/transition";
   import EnrollmentList from "$lib/components/EnrollmentList.svelte";
+  import { goto } from "$app/navigation";
+  import { apiClient } from "$lib/api/client";
+  import type { StudentResponse } from "$lib/types/student.js";
+  import type { EnrollmentResponse } from "$lib/server/section.js";
 
   let isLoading = $state(true);
-  
+
+  let { data } = $props();
+
+  $effect(() => {
+    if ((data as any)?.enrollments) enrollmentsStore.set((data as any).enrollments); // use server data
+    isLoading = false;
+  });
+
   let dashboardStats = $state({
     enrolledUnits: 0,
     activeCourses: 0,
@@ -16,20 +27,50 @@
     capacityStatus: 85,
   });
 
-  
+  // ENROLL — navigate to new enrollment page
+  const handleEnroll = () => {
+    goto("/enrollments/new");
+  };
+
+  // DELETE — calls server action then updates store
+  const handleDelete = async (enrollmentId: number) => {
+    const formData = new FormData();
+    formData.set("id", enrollmentId.toString());
+
+    const res = await fetch("?/delete", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (res.ok) {
+      enrollmentsStore.remove(enrollmentId); // optimistic update
+    }
+  };
+
+  // Client side data fetching
   onMount(async () => {
     try {
-      const [enrollRes] = await Promise.all([
-        fetch("/api/enrollments"),
-        new Promise((r) => setTimeout(r, 800)),
-      ]);
-      if (enrollRes.ok) {
-        const result = await enrollRes.json();
-        const rawData = result.data || [];
-        enrollmentsStore.set(rawData);
-        dashboardStats.activeCourses = rawData.length;
-        dashboardStats.enrolledUnits = rawData.reduce(
-          (acc: number, curr: any) => acc + (curr.units || 0), 0
+      debugger
+      if (data?.token) {
+        apiClient.setAccessToken(data.token);
+      }
+
+      // 1. Get current student ID
+      const meResponse = await apiClient.get<StudentResponse>("/students/profile");
+      const studentId = meResponse?.studentId;
+
+      if (studentId) {
+        // 2. Fetch enrollments
+        debugger
+        const enrollments = await apiClient.get<EnrollmentResponse[]>(`/enrollments/my/${studentId}`);
+        enrollmentsStore.set(enrollments);
+
+        dashboardStats.activeCourses = enrollments.length;
+        // Calculate units safely based on available credits or units fields
+        debugger
+        dashboardStats.enrolledUnits = enrollments.reduce(
+          (acc: number, curr: any) => acc + (curr.section?.course?.credits || curr.units || 0),
+          0,
         );
       }
     } catch (err) {
@@ -39,6 +80,7 @@
     }
   });
 
+  // derived state
   const cards = $derived([
     {
       label: "Academic Load",
@@ -92,32 +134,147 @@
 
   // Current date
   const dateStr = new Date().toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric", year: "numeric"
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   });
+
+  function handleShow(enrollmentId: number) {
+    goto(`/enrollments/${enrollmentId}`);
+  }
 </script>
 
 <svelte:head>
   <title>Dashboard — EMS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin="anonymous"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Geist+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
 </svelte:head>
+
+<!-- Template display -->
+<div class="page" in:fade={{ duration: 400 }}>
+  <div class="inner">
+    <!-- ── HERO ── -->
+    <header class="hero" in:fly={{ y: 16, duration: 500, delay: 60 }}>
+      <div class="hero-left">
+        <h1 class="hero-title">
+          {greeting}<br />
+        </h1>
+      </div>
+    </header>
+
+    <!-- ── STATS cards ── -->
+    <section class="stats-grid">
+      {#each cards as card, i}
+        <div
+          class="stat-card"
+          style="--card-accent-bg: {card.accentBg}; border-color: {isLoading
+            ? 'var(--border-1)'
+            : card.accentBorder};"
+          in:fly={{ y: 18, duration: 440, delay: 260 + i * 80 }}
+        >
+          <div class="stat-top">
+            <div
+              class="stat-icon"
+              style="background:{card.accentBg}; border:1px solid {card.accentBorder};"
+            >
+              <svg
+                width="18"
+                height="18"
+                fill="none"
+                stroke={card.accent}
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <path d={card.icon} />
+              </svg>
+            </div>
+            <!-- <span class="stat-badge">{card.trendUp ? "↑" : "↓"}&nbsp;{card.trend}</span> -->
+          </div>
+
+          <div class="stat-bottom">
+            <div class="stat-label">{card.label}</div>
+            <div class="stat-value-row">
+              <span
+                class="stat-value"
+                style="color:{isLoading
+                  ? 'rgba(255,255,255,0.1)'
+                  : 'var(--text-hi)'}"
+              >
+                {isLoading ? "—" : card.value}
+              </span>
+              {#if card.unit}
+                <span class="stat-unit">{card.unit}</span>
+              {/if}
+            </div>
+          </div>
+        </div>
+      {/each}
+    </section>
+
+    <!-- ── ENROLLMENT LEDGER ── -->
+    <section in:fly={{ y: 18, duration: 440, delay: 580 }}>
+      <div class="section-head">
+        <div class="section-title-wrap">
+          <div class="section-pip"></div>
+          <h2 class="section-title">Active Enrollments</h2>
+          <span class="section-count"
+            >{isLoading ? "…" : dashboardStats.activeCourses}</span
+          >
+        </div>
+      </div>
+
+      <div class="enrollment-panel">
+        {#if isLoading}
+          <div class="skeleton-rows">
+            {#each Array(5) as _}
+              <div class="skeleton-row">
+                <div class="sk-circle"></div>
+                <div class="sk-lines">
+                  <div class="sk-line"></div>
+                  <div class="sk-line short"></div>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <EnrollmentList
+            {isLoading}
+            onDeleteEnrollment={(id: number) => handleDelete(id)}
+            onEnrollCourse={handleEnroll}
+            onShowEnrollment={(enrollmentId : number) => handleShow(enrollmentId)}
+          />
+        {/if}
+      </div>
+    </section>
+  </div>
+</div>
 
 <style>
   /* ── TOKENS ── */
   :root {
-    --page-bg:     #040d1a;
-    --surface-1:   rgba(12,28,55,0.6);
-    --surface-2:   rgba(255,255,255,0.03);
-    --border-1:    rgba(255,255,255,0.06);
-    --border-2:    rgba(255,255,255,0.04);
-    --text-hi:     #e2ecff;
-    --text-mid:    rgba(148,185,255,0.6);
-    --text-lo:     rgba(96,130,200,0.45);
-    --blue:        #3b82f6;
-    --blue-glow:   rgba(59,130,246,0.15);
-    --font:        'Syne', sans-serif;
-    --mono:        'Geist Mono', monospace;
+    --page-bg: #040d1a;
+    --surface-1: rgba(12, 28, 55, 0.6);
+    --surface-2: rgba(255, 255, 255, 0.03);
+    --border-1: rgba(255, 255, 255, 0.06);
+    --border-2: rgba(255, 255, 255, 0.04);
+    --text-hi: #e2ecff;
+    --text-mid: rgba(148, 185, 255, 0.6);
+    --text-lo: rgba(96, 130, 200, 0.45);
+    --blue: #3b82f6;
+    --blue-glow: rgba(59, 130, 246, 0.15);
+    --font: "Syne", sans-serif;
+    --mono: "Geist Mono", monospace;
   }
 
   /* ── PAGE WRAPPER ── */
@@ -132,20 +289,32 @@
 
   /* Background atmosphere */
   .page::before {
-    content: '';
+    content: "";
     position: fixed;
-    width: 700px; height: 700px;
-    top: -200px; right: -200px;
-    background: radial-gradient(circle, rgba(29,78,216,0.07) 0%, transparent 65%);
+    width: 700px;
+    height: 700px;
+    top: -200px;
+    right: -200px;
+    background: radial-gradient(
+      circle,
+      rgba(29, 78, 216, 0.07) 0%,
+      transparent 65%
+    );
     pointer-events: none;
   }
 
   .page::after {
-    content: '';
+    content: "";
     position: fixed;
-    width: 500px; height: 500px;
-    bottom: -150px; left: -100px;
-    background: radial-gradient(circle, rgba(29,78,216,0.05) 0%, transparent 65%);
+    width: 500px;
+    height: 500px;
+    bottom: -150px;
+    left: -100px;
+    background: radial-gradient(
+      circle,
+      rgba(29, 78, 216, 0.05) 0%,
+      transparent 65%
+    );
     pointer-events: none;
   }
 
@@ -172,7 +341,8 @@
     }
   }
 
-  .hero-left {}
+  .hero-left {
+  }
 
   .hero-eyebrow {
     display: flex;
@@ -182,10 +352,11 @@
   }
 
   .eyebrow-dot {
-    width: 6px; height: 6px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: #22c55e;
-    box-shadow: 0 0 8px rgba(34,197,94,0.8);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
   }
 
   .eyebrow-text {
@@ -207,7 +378,7 @@
 
   .hero-title span {
     color: transparent;
-    -webkit-text-stroke: 1.5px rgba(96,165,250,0.45);
+    -webkit-text-stroke: 1.5px rgba(96, 165, 250, 0.45);
   }
 
   .hero-sub {
@@ -224,14 +395,14 @@
 
   /* Hero right: system status widget */
   .status-widget {
-    background: rgba(12,28,55,0.7);
+    background: rgba(12, 28, 55, 0.7);
     border: 1px solid var(--border-1);
     border-radius: 20px;
     padding: 1.25rem 1.5rem;
     backdrop-filter: blur(16px);
     min-width: 240px;
     flex-shrink: 0;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .status-label {
@@ -247,9 +418,10 @@
   }
 
   .status-label::before {
-    content: '';
+    content: "";
     display: block;
-    width: 14px; height: 1px;
+    width: 14px;
+    height: 1px;
     background: var(--text-lo);
   }
 
@@ -277,7 +449,7 @@
 
   .progress-track {
     height: 3px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 99px;
     overflow: hidden;
     margin-bottom: 0.85rem;
@@ -287,7 +459,7 @@
     height: 100%;
     border-radius: 99px;
     background: linear-gradient(90deg, #1d4ed8, #3b82f6);
-    box-shadow: 0 0 8px rgba(59,130,246,0.6);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
     transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
@@ -317,16 +489,21 @@
     backdrop-filter: blur(16px);
     position: relative;
     overflow: hidden;
-    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    transition:
+      transform 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
     cursor: default;
   }
 
   /* Accent glow in top-left corner */
   .stat-card::before {
-    content: '';
+    content: "";
     position: absolute;
-    top: 0; left: 0;
-    width: 120px; height: 120px;
+    top: 0;
+    left: 0;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     background: var(--card-accent-bg, transparent);
     transform: translate(-40%, -40%);
@@ -337,10 +514,12 @@
 
   .stat-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   }
 
-  .stat-card:hover::before { opacity: 1; }
+  .stat-card:hover::before {
+    opacity: 1;
+  }
 
   .stat-top {
     display: flex;
@@ -349,11 +528,14 @@
   }
 
   .stat-icon {
-    width: 42px; height: 42px;
+    width: 42px;
+    height: 42px;
     border-radius: 13px;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .stat-card:hover .stat-icon {
@@ -367,13 +549,14 @@
     text-transform: uppercase;
     padding: 0.25rem 0.6rem;
     border-radius: 99px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     color: var(--text-lo);
     white-space: nowrap;
   }
 
-  .stat-bottom {}
+  .stat-bottom {
+  }
 
   .stat-label {
     font-size: 0.6rem;
@@ -417,7 +600,8 @@
   }
 
   .trend-dot {
-    width: 5px; height: 5px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     flex-shrink: 0;
   }
@@ -442,7 +626,7 @@
     height: 22px;
     border-radius: 99px;
     background: linear-gradient(180deg, #3b82f6, #1e3a8a);
-    box-shadow: 0 0 10px rgba(59,130,246,0.5);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
     flex-shrink: 0;
   }
 
@@ -459,7 +643,7 @@
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--text-lo);
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--border-1);
     border-radius: 99px;
     padding: 0.2rem 0.6rem;
@@ -471,8 +655,8 @@
     align-items: center;
     gap: 0.4rem;
     padding: 0.55rem 1.1rem;
-    background: rgba(29,78,216,0.1);
-    border: 1px solid rgba(29,78,216,0.22);
+    background: rgba(29, 78, 216, 0.1);
+    border: 1px solid rgba(29, 78, 216, 0.22);
     border-radius: 12px;
     font-family: var(--font);
     font-size: 0.65rem;
@@ -486,10 +670,10 @@
   }
 
   .section-action:hover {
-    background: rgba(29,78,216,0.2);
-    border-color: rgba(59,130,246,0.4);
+    background: rgba(29, 78, 216, 0.2);
+    border-color: rgba(59, 130, 246, 0.4);
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(29,78,216,0.25);
+    box-shadow: 0 4px 16px rgba(29, 78, 216, 0.25);
   }
 
   /* ── ENROLLMENT PANEL ── */
@@ -499,7 +683,7 @@
     border-radius: 24px;
     overflow: hidden;
     backdrop-filter: blur(16px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
 
   /* Loading skeleton */
@@ -518,118 +702,42 @@
     animation: shimmer 1.6s ease-in-out infinite;
   }
 
-  .skeleton-row:last-child { border-bottom: none; }
+  .skeleton-row:last-child {
+    border-bottom: none;
+  }
 
   .sk-circle {
-    width: 36px; height: 36px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
     flex-shrink: 0;
   }
 
-  .sk-lines { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+  .sk-lines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
 
   .sk-line {
     height: 8px;
     border-radius: 4px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
   }
 
-  .sk-line.short { width: 40%; }
+  .sk-line.short {
+    width: 40%;
+  }
 
   @keyframes shimmer {
-    0%,100% { opacity: 0.6; }
-    50%      { opacity: 1;   }
+    0%,
+    100% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
   }
 </style>
-
-<div class="page" in:fade={{ duration: 400 }}>
-  <div class="inner">
-
-    <!-- ── HERO ── -->
-    <header class="hero" in:fly={{ y: 16, duration: 500, delay: 60 }}>
-      <div class="hero-left">
-        <h1 class="hero-title">
-          {greeting}<br>
-        </h1>
-      </div>
-
-    </header>
-
-    <!-- ── STATS ── -->
-    <section class="stats-grid">
-      {#each cards as card, i}
-        <div
-          class="stat-card"
-          style="--card-accent-bg: {card.accentBg}; border-color: {isLoading ? 'var(--border-1)' : card.accentBorder};"
-          in:fly={{ y: 18, duration: 440, delay: 260 + i * 80 }}
-        >
-          <div class="stat-top">
-            <div class="stat-icon" style="background:{card.accentBg}; border:1px solid {card.accentBorder};">
-              <svg width="18" height="18" fill="none" stroke={card.accent} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <path d={card.icon} />
-              </svg>
-            </div>
-            <!-- <span class="stat-badge">{card.trendUp ? "↑" : "↓"}&nbsp;{card.trend}</span> -->
-          </div>
-
-          <div class="stat-bottom">
-            <div class="stat-label">{card.label}</div>
-            <div class="stat-value-row">
-              <span class="stat-value" style="color:{isLoading ? 'rgba(255,255,255,0.1)' : 'var(--text-hi)'}">
-                {isLoading ? "—" : card.value}
-              </span>
-              {#if card.unit}
-                <span class="stat-unit">{card.unit}</span>
-              {/if}
-            </div>
-            <!-- <div class="stat-trend">
-              <span class="trend-dot" style="background:{card.trendUp ? '#22c55e' : '#f59e0b'}; box-shadow:0 0 6px {card.trendUp ? 'rgba(34,197,94,0.6)' : 'rgba(245,158,11,0.6)'}"></span>
-              {card.trend}
-            </div> -->
-          </div>
-        </div>
-      {/each}
-    </section>
-
-    <!-- ── ENROLLMENT LEDGER ── -->
-    <section in:fly={{ y: 18, duration: 440, delay: 580 }}>
-      <div class="section-head">
-        <div class="section-title-wrap">
-          <div class="section-pip"></div>
-          <h2 class="section-title">Active Enrollments</h2>
-          <span class="section-count">{isLoading ? "…" : dashboardStats.activeCourses}</span>
-        </div>
-        <a href="/enrollments" class="section-action">
-          Manage Records
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </a>
-      </div>
-
-      <div class="enrollment-panel">
-        {#if isLoading}
-          <div class="skeleton-rows">
-            {#each Array(5) as _}
-              <div class="skeleton-row">
-                <div class="sk-circle"></div>
-                <div class="sk-lines">
-                  <div class="sk-line"></div>
-                  <div class="sk-line short"></div>
-                </div>
-              </div>
-            {/each}
-          </div>
-        {:else}
-          <EnrollmentList
-            {isLoading}
-            onDeleteEnrollment={() => {}}
-            onEnrollCourse={() => {}}
-          />
-        {/if}
-      </div>
-    </section>
-
-  </div>
-</div>

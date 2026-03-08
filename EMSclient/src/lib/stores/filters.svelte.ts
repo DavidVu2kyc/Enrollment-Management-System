@@ -1,4 +1,4 @@
-import type { EnrollmentFilterType } from '$lib/types';
+import type { EnrollmentFilterType } from '$lib/types/enrollment';
 import { enrollmentsStore } from './enrollments.svelte';
 
 class FilterStore {
@@ -8,10 +8,10 @@ class FilterStore {
 	get filtered() {
 		const all = enrollmentsStore.all;
 		if (this.type === 'enrolled') {
-			return all.filter((e) => e.status === 'ENROLLED' || e.isEnrolled);
+			return all.filter((e) => e.status === 'ENROLLED');
 		}
 		if (this.type === 'pending') {
-			return all.filter((e) => e.status === 'PENDING' || !e.isEnrolled);
+			return all.filter((e) => e.status === 'PENDING');
 		}
 		return all;
 	}
@@ -23,9 +23,9 @@ class FilterStore {
 		const search = this.query.toLowerCase();
 		return filtered.filter(
 			(e) =>
-				e.section?.courseName.toLowerCase().includes(search) ||
-				e.section?.courseCode.toLowerCase().includes(search) ||
-				e.section?.sectionNumber.toLowerCase().includes(search)
+				e.section?.course?.title?.toLowerCase()?.includes(search) ||
+				e.section?.course?.code?.toLowerCase()?.includes(search) ||
+				e.section?.sectionCode?.toLowerCase()?.includes(search)
 		);
 	}
 

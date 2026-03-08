@@ -25,25 +25,21 @@ export const actions: Actions = {
     const formData = await request.formData();
     const profile = await getProfile(token, fetch);
 
-    console.log("Updating profile with ID:", profile.studentId);
+    console.log("Updating profile with name:", profile.firstName);
     debugger;
-    
     try {
       const result = await updateProfile(
-        profile.studentId, // This is now correctly passed
+        profile.studentId,
         {
           firstName: formData.get("firstName") as string,
           lastName: formData.get("lastName") as string,
           degreeId: profile.degreeId,
-          // Add email if needed, but careful not to change it
-          // email: profile.email,
         },
-        token, // Removed the ! non-null assertion
+        token!,
         fetch,
       );
       return result;
     } catch (err: any) {
-      console.error("Update failed:", err);
       return { success: false, error: err?.message ?? "Update failed" };
     }
   },

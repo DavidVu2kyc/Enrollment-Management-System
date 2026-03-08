@@ -15,10 +15,10 @@ public class EnrollmentResponse {
     private SectionResponse section;
     private String status;
     private LocalDateTime enrolledAt;
-
-    private String message;
+private String message;
 
     public EnrollmentResponse(String message) {
         this.message = message;
     }
+
 }
