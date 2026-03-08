@@ -37,7 +37,7 @@ public class TermService {
     }
 
     //    get the currently active terms
-    public TermResponse getActiveTerm() {
+    public TermResponse getActiveTerm(Boolean isActive) {
         Term term = termRepository.findActiveTerm()
                 .orElseThrow(() -> new RuntimeException("Active term not found"));
 

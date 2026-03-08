@@ -6,15 +6,22 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface StudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByUser_UserId(Long userId);
-    boolean existsByFirstName( String firstName);
-    boolean  existsByLastName( String lastName);
+
+    Optional<Student> findByStudentId(Long studentId);
+
+    boolean existsByFirstName(String firstName);
+
+    boolean existsByLastName(String lastName);
+
     boolean existsByStudentNumber(String studentNumber);
+
     Page<Student> findByDegree_DegreeId(Long degreeId, Pageable pageable);
 
 }

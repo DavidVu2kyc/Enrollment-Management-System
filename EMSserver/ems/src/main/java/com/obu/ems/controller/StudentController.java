@@ -12,6 +12,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/students")
 @RequiredArgsConstructor
@@ -20,11 +22,14 @@ public class StudentController {
     private final StudentService studentService;
     private final UserRepository userRepository;
 
+    //    get all students with corresponding degrees
     @GetMapping
     public ResponseEntity<Page<StudentResponse>> getAll(
             @RequestParam(required = false) Long degreeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("name"));
         return ResponseEntity.ok(studentService.getAll(degreeId, PageRequest.of(page, size)));
     }
 
@@ -58,17 +63,16 @@ public class StudentController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<StudentResponse> update(@PathVariable Long id, @Valid @RequestBody UpdateStudentRequest request) {
+    @PutMapping("/{studentId}")
+    public ResponseEntity<StudentResponse> update(@PathVariable Long studentId , @Valid @RequestBody UpdateStudentRequest request) {
         try {
-            StudentResponse response = studentService.updateStudentRequest(id, request);
+            StudentResponse response = studentService.updateStudentRequest(studentId, request);
             return ResponseEntity.ok(response);
 
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).build();
         }
     }
-
 
 
 }

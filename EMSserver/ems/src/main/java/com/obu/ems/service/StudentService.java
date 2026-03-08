@@ -10,21 +10,20 @@ import com.obu.ems.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class StudentService {
 
 
-//    List all students (ADMIN only)
+    //    List all students (ADMIN only)
     @Autowired
     private StudentRepository studentRepository;
     @Autowired
@@ -32,16 +31,17 @@ public class StudentService {
 
     private final DegreeMapper degreeMapper;
 
-//    Get all students ( a list of students - admin role only )
-        public Page<StudentResponse> getAll(Long degreeId, Pageable pageable)
-    {
-        Page<Student> studentList = studentRepository.findByDegree_DegreeId(degreeId,pageable);
-//        CONVERT student to Student Response
-        return studentList.map(this::mapToStudentResponse);
+    @Transactional(readOnly = true)
+    public Page<StudentResponse> getAll(Long degreeId, Pageable pageable) {
+
+        Page<Student> students = (degreeId != null)
+                ? studentRepository.findByDegree_DegreeId(degreeId, pageable)
+                : studentRepository.findAll(pageable);
+
+        return students.map(this::mapToStudentResponse);
     }
 
-    public StudentResponse mapToStudentResponse( Student student )
-    {
+    public StudentResponse mapToStudentResponse(Student student) {
         return StudentResponse.builder()
                 .studentId(student.getStudentId())
                 .userId(student.getUser().getUserId())
@@ -55,8 +55,7 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     //    Get student by user ID (for auth flow)
-    public StudentResponse getByUserId(Long userId)
-    {
+    public StudentResponse getByUserId(Long userId) {
         Student student = studentRepository.findByUser_UserId(userId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
@@ -64,21 +63,19 @@ public class StudentService {
 
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     //    update student profile
-    public StudentResponse updateStudentRequest(Long useIid, UpdateStudentRequest request)
-    {
+    public StudentResponse updateStudentRequest(Long userId, UpdateStudentRequest request) {
         // fetch student and verify  existence of that student
-        Student student = studentRepository.findByUser_UserId(useIid).orElseThrow(() -> new RuntimeException("Student not found")) ;
+        Student student = studentRepository.findByStudentId(userId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
 
         // Update basic info
-        if(request.getFirstName() != null)
-        {
+        if (request.getFirstName() != null) {
             student.setFirstName(request.getFirstName());
         }
 
-        if(request.getLastName() != null)
-        {
+        if (request.getLastName() != null) {
             student.setLastName(request.getLastName());
         }
 
@@ -86,10 +83,9 @@ public class StudentService {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        boolean isAdmin  = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-        if(isAdmin && request.getDegreeId()!=null)
-        {
+        if (isAdmin && request.getDegreeId() != null) {
             Degree degree = degreeRepository.findById(request.getDegreeId())
                     .orElseThrow(() -> new RuntimeException("Degree not found"));
             student.setDegree(degree);

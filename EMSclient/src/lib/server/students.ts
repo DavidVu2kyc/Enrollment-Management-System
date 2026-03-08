@@ -8,7 +8,8 @@ export async function getProfile(
   token: string | null,
   fetch: typeof globalThis.fetch,
 ): Promise<StudentResponse> {
-    const client = createServerApiClient(token, fetch);
+  debugger
+  const client = createServerApiClient(token, fetch);
   return client.get<StudentResponse>("/students/profile");
 }
 
@@ -18,12 +19,14 @@ export async function getProfile(
 export async function updateProfile(
   studentId: number,
   request: UpdateStudentRequest,
-  token: string,
+  token: string | null,  // Changed to accept null
   fetch: typeof globalThis.fetch,
 ): Promise<{ success: boolean }> {
+  debugger;
   const client = createServerApiClient(token, fetch);
+  console.log("TOKEN:", token);
 
-  await client.put(`/students/${studentId}`, request); // ✅ sends { firstName, lastName } directly
+  await client.put(`/students/${studentId}`, request); 
 
   return { success: true };
 }

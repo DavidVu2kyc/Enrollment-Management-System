@@ -31,20 +31,15 @@ public class EnrollmentController {
 
     @GetMapping("/my/{studentId}")
     public ResponseEntity<List<EnrollmentResponse>> getMyEnrollments(
-            @PathVariable Long studentId,
-            @RequestParam Long termId) {
-        return ResponseEntity.ok(enrollmentService.getMyEnrollments(studentId, termId));
+            @PathVariable Long studentId) {
+        return ResponseEntity.ok(enrollmentService.getMyEnrollments(studentId)) ;
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<EnrollmentResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(enrollmentService.getById(id));
-    }
 
-    @PutMapping("/{id}/status")
-    public ResponseEntity<EnrollmentResponse> updateStatus(@PathVariable Long id,
+    @PutMapping("/{enrollmentId}/status")
+    public ResponseEntity<EnrollmentResponse> updateStatus(@PathVariable Long enrollmentId,
             @Valid @RequestBody UpdateEnrollmentRequest request) {
-        return ResponseEntity.ok(enrollmentService.updateStatus(id, request));
+        return ResponseEntity.ok(enrollmentService.updateStatus(enrollmentId, request));
     }
 
     @DeleteMapping("/{enrollmentId}")
