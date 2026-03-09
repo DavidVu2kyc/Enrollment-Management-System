@@ -4,9 +4,9 @@
   import EnrollmentRecord from "./EnrollmentRecord.svelte";
 
   interface Props {
-    onDeleteEnrollment?: (id: number) => void;
-    onEnrollCourse?: (id: number) => void;
-    onShowEnrollment?: (id: number) => void;
+    onDeleteEnrollment?: (enrollmentId: number) => void;
+    onEnrollCourse?: (enrollmentId: number) => void;
+    onShowEnrollment?: (enrollmentId: number) => void;
     isLoading?: boolean;
   }
 

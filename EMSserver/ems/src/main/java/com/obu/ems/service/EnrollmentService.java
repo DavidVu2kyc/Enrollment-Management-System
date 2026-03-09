@@ -80,6 +80,15 @@ public class EnrollmentService {
 
     }
 
+    @Transactional
+    public EnrollmentResponse getEnrollment(Long enrollmentId) {
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+        return enrollmentMapper.mapToEnrollmentResponse(enrollment);
+    }
+
+
+
     // get the current student's enrollment list ( EAF)
     @Transactional
     public List<EnrollmentResponse> getMyEnrollments(Long studentId) {
@@ -147,4 +156,5 @@ public class EnrollmentService {
                     .build();
         }
     }
+
 }

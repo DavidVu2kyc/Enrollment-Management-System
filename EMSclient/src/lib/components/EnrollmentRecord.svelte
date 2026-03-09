@@ -64,10 +64,17 @@
       }
     };
 
-    const credits = enrollment.section?.course?.credits ?? enrollment.units ?? 0;
-    const instructor = enrollment.section?.instructor ?? null;
+    const credits = enrollment.section?.course?.units ?? enrollment.units ?? 0;
+    const faculty = enrollment.section?.facultyName ?? null;
     const schedule = enrollment.section?.schedule ?? null;
     const room = enrollment.section?.room ?? null;
+
+    const formattedSchedule = $derived.by(() => {
+      if (!schedule) return null;
+      const start = schedule.startTime?.slice(0, 5) ?? "";
+      const end = schedule.endTime?.slice(0, 5) ?? "";
+      return `${schedule.dayOfWeek} ${start} - ${end}`.trim();
+    });
   </script>
 
   <!-- ── TOAST ── -->
@@ -115,13 +122,13 @@
       <!-- Top row: course info + status badge -->
       <div class="card-top">
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <div
+        <svelte:element this={onShow ? 'button' : 'div'}
           class="course-info"
           class:clickable={!!onShow}
           onclick={() => onShow && onShow(enrollment.enrollmentId)}
-          onkeydown={(e) => e.key === "Enter" && onShow && onShow(enrollment.enrollmentId)}
+          type={onShow ? "button" : undefined}
         >
-          <div class="course-meta">
+        <div class="course-meta">
             <span class="course-code">{enrollment.section?.course?.code ?? "—"}</span>
             <span class="meta-sep">·</span>
             <span class="section-code">§ {enrollment.section?.sectionCode ?? "—"}</span>
@@ -138,7 +145,7 @@
           {#if enrollment.section?.course?.description}
             <p class="course-desc">{enrollment.section.course.description}</p>
           {/if}
-        </div>
+        </svelte:element>
 
         <!-- Status badge -->
         <div class="badge-wrap">
@@ -157,22 +164,22 @@
       </div>
 
       <!-- Details row: instructor / schedule / room -->
-      {#if instructor || schedule || room}
-        <!-- <div class="details-row">
-          {#if instructor}
+      {#if faculty || formattedSchedule || room}
+        <div class="details-row">
+          {#if faculty}
             <div class="detail-chip">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
               </svg>
-              <span>{instructor}</span>a
+              <span>{faculty}</span>
             </div>
-          {/if}a
-          {#if schedule}
+          {/if}
+          {#if formattedSchedule}
             <div class="detail-chip">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="18" rx="2"/><path stroke-linecap="round" d="M16 2v4M8 2v4M3 10h18"/>
               </svg>
-              <span>{schedule}</span>
+              <span>{formattedSchedule}</span>
             </div>
           {/if}
           {#if room}
@@ -180,10 +187,10 @@
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
               </svg>
-              <span>{room}</span>
+              <span>{room.building} {room.roomNumber}</span>
             </div>
           {/if}
-        </div> -->
+        </div>
       {/if}
 
       <!-- Actions -->
@@ -387,6 +394,16 @@
     .course-info {
       flex: 1;
       min-width: 0;
+      /* Reset button styles for when it's a <button> */
+      appearance: none;
+      background: none;
+      border: none;
+      padding: 0;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      display: block;
+      width: 100%;
     }
 
     .course-info.clickable {

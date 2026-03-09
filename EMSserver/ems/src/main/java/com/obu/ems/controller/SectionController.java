@@ -36,4 +36,5 @@ public class SectionController {
     public ResponseEntity<List<EnrollmentResponse>> getEnrollments(@PathVariable Long sectionId) {
         return ResponseEntity.ok(sectionService.getEnrollmentsBySection(sectionId));
     }
+
 }

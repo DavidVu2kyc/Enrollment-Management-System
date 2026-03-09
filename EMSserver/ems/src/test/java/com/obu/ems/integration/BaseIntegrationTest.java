@@ -31,8 +31,8 @@ public abstract class   BaseIntegrationTest {
 
     static {
             // Add this before any Testcontainer initialization
-        System.setProperty("docker.host", "unix:///Users/David/.docker/run/docker.sock");
-        System.setProperty("DOCKER_HOST", "unix:///Users/David/.docker/run/docker.sock");
+        // System.setProperty("docker.host", "unix:///Users/David/.docker/run/docker.sock");
+        // System.setProperty("DOCKER_HOST", "unix:///Users/David/.docker/run/docker.sock");
         postgres.start();
     }
 

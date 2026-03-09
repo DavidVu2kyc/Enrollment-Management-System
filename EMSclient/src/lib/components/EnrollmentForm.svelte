@@ -1,15 +1,22 @@
+<!-- src/lib/components/EnrollmentForm.svelte -->
 <script lang="ts">
   import { superForm } from "sveltekit-superforms";
   import { yup } from "sveltekit-superforms/adapters";
-  import * as Y from "yup";
-  import Button from "./Button.svelte";
-  import type { Section } from "$lib/types/section";
-  import type { Enrollment } from "$lib/types/enrollment";
+  import {
+    enrollmentSchema,
+    type Status,
+  } from "$lib/schemas/enrollment.schema";
+
+  // ✅ Removed duplicate `import type { Enrollment, Enrollment }`
+  // ✅ Uses EnrollmentResponse (API shape) not the local Enrollment model
+  import type { EnrollmentResponse } from "$lib/types/enrollment";
+  import type { SectionResponse } from "$lib/server/section";
 
   interface Props {
-    enrollment?: Enrollment | null;
-    availableSections?: Section[];
-    onSubmit?: (data: any) => void;
+    enrollment?: EnrollmentResponse | null; // ✅ was `EnrollmentR` (undefined type)
+    availableSections?: SectionResponse[]; // ✅ was Section[] (wrong type)
+    onSubmit?: (data: { sectionId: number; status: Status }) => void;
+    onSectionChange?: (sectionId: number) => void;
     isLoading?: boolean;
     mode?: "new" | "edit";
   }
@@ -18,44 +25,47 @@
     enrollment,
     availableSections = [],
     onSubmit,
+    onSectionChange,
     isLoading = false,
     mode = "new",
   }: Props = $props();
 
-  const schema = Y.object({
-    sectionId: Y.number()
-      .typeError("Section choice is mandatory")
-      .required("Section choice is mandatory"),
+  const initialSectionId = enrollment?.sectionId ?? undefined;
+  const initialStatus: Status = (enrollment?.status as Status) ?? "PENDING";
 
-    status: Y.mixed<"PENDING" | "ENROLLED" | "DROPPED">()
-      .oneOf(["PENDING", "ENROLLED", "DROPPED"])
-      .default("PENDING"),
-  });
-
-  // svelte-ignore state_referenced_locally
-  const initialSectionId = enrollment?.sectionId || undefined;
-  // svelte-ignore state_referenced_locally
-  const initialStatus = enrollment?.status || "PENDING";
-
+  // ✅ superForm declared BEFORE $derived that uses $form
   const { form, errors, enhance } = superForm(
     { sectionId: initialSectionId, status: initialStatus },
     {
-      validators: yup(schema),
+      validators: yup(enrollmentSchema),
       SPA: true,
       onUpdate: ({ form }) => {
-        if (form.valid && onSubmit) onSubmit(form.data);
+        if (form.valid && onSubmit) {
+          onSubmit(form.data as { sectionId: number; status: Status });
+        }
       },
     },
   );
 
+  // ✅ $derived now safely after superForm (uses $form)
+  const selectedSection = $derived(
+    availableSections.find((s) => s.sectionId === Number($form.sectionId)) ??
+      null,
+  );
+
+  // Sync form when enrollment prop changes (SSR data arrives after mount)
   $effect(() => {
     if (enrollment) {
       $form.sectionId = enrollment.sectionId;
-      $form.status = enrollment.status;
+      $form.status = enrollment.status as Status;
     }
   });
 
-  type Status = "PENDING" | "ENROLLED" | "DROPPED";
+  // ✅ Notifies parent page to fire GET /api/sections/{id}
+  const handleSectionChange = (e: Event) => {
+    const id = Number((e.currentTarget as HTMLSelectElement).value);
+    if (id && onSectionChange) onSectionChange(id);
+  };
 
   const statusMeta: Record<
     Status,
@@ -77,10 +87,15 @@
       dot: "#f87171",
     },
   };
+
+  const statuses = Object.entries(statusMeta) as [
+    Status,
+    { label: string; color: string; dot: string },
+  ][];
 </script>
 
 <div class="form-shell">
-  <!-- Header -->
+  <!-- ── Header ─────────────────────────────────────────── -->
   <div class="form-header">
     <div class="form-header-inner">
       <div>
@@ -101,10 +116,9 @@
     </div>
   </div>
 
-  <!-- Form -->
   <form use:enhance>
     <div class="form-body">
-      <!-- Section select -->
+      <!-- ── Section select ──────────────────────────────── -->
       <div class="field-group">
         <label for="sectionId" class="field-label">
           Academic Section <span class="req">*</span>
@@ -112,8 +126,9 @@
         <div class="select-wrap">
           <select
             id="sectionId"
-            bind:value={$form.sectionId}
             name="sectionId"
+            bind:value={$form.sectionId}
+            onchange={handleSectionChange}
             required
             aria-label="Select course section"
             disabled={isLoading || availableSections.length === 0}
@@ -121,8 +136,7 @@
             <option value="">Select a section…</option>
             {#each availableSections as section}
               <option value={section.sectionId}>
-                {section.course?.code} — {section.course
-                  ?.title}-{section.sectionCode}
+                {section.course?.code} — {section.course?.title} · {section.sectionCode}
               </option>
             {/each}
           </select>
@@ -143,44 +157,18 @@
             </svg>
           </span>
         </div>
+
         {#if $errors.sectionId?.[0]}
-          <div class="field-error">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 20 20"
-              fill="rgba(248,113,113,0.8)"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            {$errors.sectionId[0]}
-          </div>
+          <div class="field-error">{$errors.sectionId[0]}</div>
         {/if}
         {#if availableSections.length === 0}
           <div class="empty-hint">
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle cx="12" cy="12" r="10" /><path
-                stroke-linecap="round"
-                d="M12 8v4m0 4h.01"
-              />
-            </svg>
             No sections available in this catalog period
           </div>
         {/if}
       </div>
 
-      <!-- Status (edit only) -->
+      <!-- ── Status pills (edit only) ────────────────────── -->
       {#if mode === "edit"}
         <div class="field-group">
           <!-- svelte-ignore a11y_label_has_associated_control -->
@@ -188,7 +176,7 @@
             >Enrollment Status <span class="req">*</span></label
           >
           <div class="status-pills">
-            {#each Object.entries(statusMeta) as [val, meta]}
+            {#each statuses as [val, meta]}
               <button
                 type="button"
                 class="status-pill"
@@ -196,186 +184,186 @@
                 style={$form.status === val
                   ? `background:${meta.color}; border-color:${meta.dot}33; color:${meta.dot};`
                   : ""}
-                // onclick={() => ($form.status = val)}
+                onclick={() => ($form.status = val)}
               >
-                <input type="hidden" name="status" bind:value={$form.status} />
+                <!-- ✅ onclick not on:click (Svelte 5 runes) -->
                 <span class="status-pill-dot" style={`background:${meta.dot};`}
                 ></span>
                 {meta.label}
               </button>
             {/each}
           </div>
+          <input type="hidden" name="status" bind:value={$form.status} />
         </div>
       {/if}
 
-      <!-- Section preview -->
-      {#if $form.sectionId && availableSections.length}
-        {@const sel = availableSections.find(
-          (s) => s.sectionId === Number($form.sectionId),
-        )}
-        {#if sel}
-          {@const seatsLeft = sel.maxSeats - sel.enrolledCount}
-          {@const seatClass =
-            seatsLeft <= 0
-              ? "seats-full"
-              : seatsLeft <= 3
-                ? "seats-warn"
-                : "seats-ok"}
-          <div class="section-preview">
-            <!-- Top row: name + seats -->
-            <div class="preview-top">
-              <div>
-                <div class="preview-code-row">
-                  <span class="preview-code">{sel.course?.code}</span>
-                  <span class="preview-section-num"
-                    >Section {sel.sectionCode}</span
-                  >
-                </div>
-                <h3 class="preview-course-name">{sel.course?.title}</h3>
-              </div>
-              <div class="preview-seats">
-                <p class="preview-seats-label">Seats Left</p>
-                <p class="preview-seats-count {seatClass}">
-                  {seatsLeft <= 0 ? "Full" : seatsLeft}
-                </p>
-              </div>
-            </div>
+      <!-- ── Section preview (instant, from availableSections) ── -->
+      {#if selectedSection}
+        {@const seatsLeft =
+          selectedSection.maxSeats - selectedSection.enrolledCount}
+        {@const seatClass =
+          seatsLeft <= 0
+            ? "seats-full"
+            : seatsLeft <= 3
+              ? "seats-warn"
+              : "seats-ok"}
 
-            <!-- Meta grid -->
-            <div class="preview-meta">
-              <div class="preview-meta-cell">
-                <div class="meta-icon">
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <p class="meta-label">Instructor</p>
-                  <p class="meta-value">{sel.facultyName || "TBA"}</p>
-                </div>
+        <div class="section-preview">
+          <div class="preview-top">
+            <div>
+              <div class="preview-code-row">
+                <span class="preview-code">{selectedSection.course?.code}</span>
+                <span class="preview-section-num"
+                  >Section {selectedSection.sectionCode}</span
+                >
               </div>
-              <div class="preview-meta-cell">
-                <div class="meta-icon">
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <p class="meta-label">Room</p>
-                  <p class="meta-value">
-                    {sel.room
-                      ? `${sel.room.building} ${sel.room.roomNumber}`
-                      : "Online / Hybrid"}
-                  </p>
-                </div>
-              </div>
-              <div class="preview-meta-cell">
-                <div class="meta-icon">
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <p class="meta-label">Enrolled / Capacity</p>
-                  <p class="meta-value">{sel.enrolledCount} / {sel.maxSeats}</p>
-                </div>
-              </div>
-              <div class="preview-meta-cell">
-                <div class="meta-icon">
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <p class="meta-label">Waitlist</p>
-                  <p class="meta-value">
-                    {seatsLeft <= 0 ? "Active" : "Not Required"}
-                  </p>
-                </div>
-              </div>
+              <h3 class="preview-course-name">
+                {selectedSection.course?.title}
+              </h3>
             </div>
+            <div class="preview-seats">
+              <p class="preview-seats-label">Seats Left</p>
+              <p class="preview-seats-count {seatClass}">
+                {seatsLeft <= 0 ? "Full" : seatsLeft}
+              </p>
+            </div>
+          </div>
 
-            <!-- Full warning -->
-            {#if seatsLeft <= 0}
-              <div class="full-warning">
+          <div class="preview-meta">
+            <div class="preview-meta-cell">
+              <div class="meta-icon">
                 <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
                   fill="none"
-                  stroke="rgba(251,191,36,0.8)"
+                  stroke="currentColor"
                   stroke-width="2"
+                  viewBox="0 0 24 24"
                 >
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                   />
                 </svg>
-                <p>
-                  This section is full — enrolling will activate the waitlist
-                  automatically.
+              </div>
+              <div>
+                <p class="meta-label">Instructor</p>
+                <p class="meta-value">{selectedSection.facultyName || "TBA"}</p>
+              </div>
+            </div>
+            <div class="preview-meta-cell">
+              <div class="meta-icon">
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p class="meta-label">Room</p>
+                <p class="meta-value">
+                  {selectedSection.room
+                    ? `${selectedSection.room.building} ${selectedSection.room.roomNumber}`
+                    : "Online / Hybrid"}
                 </p>
               </div>
-            {/if}
+            </div>
+            <div class="preview-meta-cell">
+              <div class="meta-icon">
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p class="meta-label">Enrolled / Capacity</p>
+                <p class="meta-value">
+                  {selectedSection.enrolledCount} / {selectedSection.maxSeats}
+                </p>
+              </div>
+            </div>
+            <div class="preview-meta-cell">
+              <div class="meta-icon">
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p class="meta-label">Waitlist</p>
+                <p class="meta-value">
+                  {seatsLeft <= 0 ? "Active" : "Not Required"}
+                </p>
+              </div>
+            </div>
           </div>
-        {/if}
+
+          {#if seatsLeft <= 0}
+            <div class="full-warning">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="rgba(251,191,36,0.8)"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                />
+              </svg>
+              <p>
+                This section is full — enrolling will activate the waitlist
+                automatically.
+              </p>
+            </div>
+          {/if}
+        </div>
       {/if}
     </div>
 
     <div class="divider"></div>
 
-    <!-- Footer -->
+    <!-- ── Footer ─────────────────────────────────────────── -->
     <div class="form-footer">
       <button
         type="button"
         class="btn-discard"
         onclick={() => window.history.back()}
       >
+        <!-- ✅ onclick not on:click -->
         Discard
       </button>
       <button
@@ -425,23 +413,18 @@
 </div>
 
 <style>
-  /* ─── Tokens ──────────────────────────────────────── */
   :root {
-    --navy: #05101f;
     --panel-bg: rgba(10, 22, 45, 0.85);
     --panel-border: rgba(255, 255, 255, 0.07);
     --input-bg: rgba(255, 255, 255, 0.04);
     --input-border: rgba(255, 255, 255, 0.08);
-    --input-focus: #3b6fd4;
     --text-primary: #ffffff;
     --text-muted: rgba(140, 170, 210, 0.55);
     --text-label: rgba(80, 140, 255, 0.65);
-    --accent-blue: #3b6fd4;
     --font-serif: "DM Serif Display", serif;
     --font-sans: "DM Sans", sans-serif;
   }
 
-  /* ─── Shell ───────────────────────────────────────── */
   .form-shell {
     font-family: var(--font-sans);
     background: var(--panel-bg);
@@ -454,7 +437,6 @@
     backdrop-filter: blur(20px);
   }
 
-  /* ─── Form header ─────────────────────────────────── */
   .form-header {
     position: relative;
     padding: 2.5rem 2.5rem 2rem;
@@ -540,19 +522,6 @@
     animation: pulse-dot 2s ease-in-out infinite;
   }
 
-  @keyframes pulse-dot {
-    0%,
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.4;
-      transform: scale(0.7);
-    }
-  }
-
-  /* ─── Form body ───────────────────────────────────── */
   .form-body {
     padding: 2.5rem;
     display: flex;
@@ -560,7 +529,6 @@
     gap: 2rem;
   }
 
-  /* ─── Field group ─────────────────────────────────── */
   .field-group {
     display: flex;
     flex-direction: column;
@@ -580,7 +548,6 @@
     margin-left: 0.25rem;
   }
 
-  /* ─── Select wrapper ──────────────────────────────── */
   .select-wrap {
     position: relative;
   }
@@ -597,11 +564,11 @@
     font-weight: 500;
     color: var(--text-primary);
     cursor: pointer;
+    outline: none;
     transition:
       border-color 0.2s,
       background 0.2s,
       box-shadow 0.2s;
-    outline: none;
   }
 
   .select-wrap select:focus {
@@ -614,7 +581,6 @@
     opacity: 0.4;
     cursor: not-allowed;
   }
-
   .select-wrap select option {
     background: #0c1c35;
     color: #ffffff;
@@ -634,7 +600,6 @@
     color: rgba(100, 160, 255, 0.7);
   }
 
-  /* ─── Status pills ────────────────────────────────── */
   .status-pills {
     display: flex;
     gap: 0.6rem;
@@ -664,11 +629,9 @@
     border-color: rgba(255, 255, 255, 0.15);
     color: rgba(200, 220, 255, 0.7);
   }
-
   .status-pill.active {
     color: var(--text-primary);
   }
-
   .status-pill-dot {
     width: 6px;
     height: 6px;
@@ -676,7 +639,6 @@
     flex-shrink: 0;
   }
 
-  /* ─── Field error ─────────────────────────────────── */
   .field-error {
     display: flex;
     align-items: center;
@@ -687,7 +649,19 @@
     animation: fadeUp 0.2s ease both;
   }
 
-  /* ─── Section preview card ────────────────────────── */
+  .empty-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    font-size: 0.72rem;
+    color: rgba(140, 170, 210, 0.35);
+  }
+
+  /* ── Section preview ──────────────────── */
   .section-preview {
     background: rgba(59, 111, 212, 0.05);
     border: 1px solid rgba(59, 111, 212, 0.15);
@@ -745,7 +719,6 @@
     text-align: right;
     flex-shrink: 0;
   }
-
   .preview-seats-label {
     font-size: 0.58rem;
     font-weight: 700;
@@ -754,7 +727,6 @@
     color: var(--text-muted);
     margin-bottom: 0.25rem;
   }
-
   .preview-seats-count {
     font-family: var(--font-serif);
     font-size: 1.8rem;
@@ -798,10 +770,10 @@
     width: 34px;
     height: 34px;
     border-radius: 10px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
     background: rgba(59, 111, 212, 0.1);
     color: rgba(100, 160, 255, 0.7);
   }
@@ -814,7 +786,6 @@
     color: var(--text-muted);
     margin-bottom: 0.2rem;
   }
-
   .meta-value {
     font-size: 0.8rem;
     font-weight: 600;
@@ -822,60 +793,6 @@
     line-height: 1.2;
   }
 
-  /* ─── Schedule pills ──────────────────────────────── */
-  .schedules-wrap {
-    padding: 1.25rem 1.75rem 1.5rem;
-    border-top: 1px solid rgba(59, 111, 212, 0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .schedules-label {
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: rgba(59, 111, 212, 0.4);
-  }
-
-  .schedule-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .schedule-chip {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(59, 111, 212, 0.08);
-    border: 1px solid rgba(59, 111, 212, 0.15);
-    border-radius: 8px;
-    padding: 0.4rem 0.85rem;
-  }
-
-  .chip-day {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(100, 160, 255, 0.8);
-  }
-
-  .chip-divider {
-    width: 1px;
-    height: 10px;
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .chip-time {
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-muted);
-  }
-
-  /* ─── Full section warning ────────────────────────── */
   .full-warning {
     display: flex;
     align-items: center;
@@ -895,7 +812,7 @@
     margin: 0;
   }
 
-  /* ─── Form footer ─────────────────────────────────── */
+  /* ── Footer ───────────────────────────── */
   .form-footer {
     display: flex;
     align-items: center;
@@ -941,7 +858,7 @@
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #ffffff;
+    color: #fff;
     cursor: pointer;
     transition: all 0.2s;
     box-shadow:
@@ -972,12 +889,28 @@
     animation: spin 0.65s linear infinite;
   }
 
+  .divider {
+    height: 1px;
+    background: var(--panel-border);
+    margin: 0;
+  }
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
     }
   }
-
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(0.7);
+    }
+  }
   @keyframes fadeUp {
     from {
       opacity: 0;
@@ -987,25 +920,5 @@
       opacity: 1;
       transform: translateY(0);
     }
-  }
-
-  /* ─── Empty state ─────────────────────────────────── */
-  .empty-hint {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px dashed rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
-    font-size: 0.72rem;
-    color: rgba(140, 170, 210, 0.35);
-  }
-
-  /* ─── Divider ─────────────────────────────────────── */
-  .divider {
-    height: 1px;
-    background: var(--panel-border);
-    margin: 0;
   }
 </style>
