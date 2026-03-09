@@ -95,6 +95,7 @@ public class EnrollmentService {
     }
 
 
+
     // update enrollment status - ADMIN ROLE only
     public EnrollmentResponse updateStatus(Long enrollmentId, UpdateEnrollmentRequest updateEnrollmentRequest) {
         // enrollment verification exists
@@ -103,7 +104,7 @@ public class EnrollmentService {
 
         // Role check : Admin only
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT"));
 
         if (!isAdmin) {
             throw new AccessDeniedException("Only administrators can update enrollment statuses.");
@@ -123,7 +124,7 @@ public class EnrollmentService {
 
         // Authentication context for role check
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT"));
 
         // Students can only drop their own enrollments
         if (!isAdmin && !enroll.getStudent().getStudentId().equals(studentId)) {

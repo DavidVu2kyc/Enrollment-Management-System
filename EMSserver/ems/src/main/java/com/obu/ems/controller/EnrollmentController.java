@@ -37,13 +37,16 @@ public class EnrollmentController {
 
 
     @PutMapping("/{enrollmentId}/status")
-    public ResponseEntity<EnrollmentResponse> updateStatus(@PathVariable Long enrollmentId,
-            @Valid @RequestBody UpdateEnrollmentRequest request) {
+    public ResponseEntity<EnrollmentResponse> updateStatus(@PathVariable Long enrollmentId, @Valid @RequestBody UpdateEnrollmentRequest request) {
         return ResponseEntity.ok(enrollmentService.updateStatus(enrollmentId, request));
     }
 
     @DeleteMapping("/{enrollmentId}")
-    public ResponseEntity<EnrollmentResponse> drop(@PathVariable Long enrollmentId, @RequestParam Long studentId) {
-        return ResponseEntity.ok(enrollmentService.drop(studentId, enrollmentId));
+    public ResponseEntity<String> drop(
+            @PathVariable Long enrollmentId, @RequestParam Long studentId) {
+
+        enrollmentService.drop(studentId, enrollmentId);
+
+        return ResponseEntity.ok("Enrollment deleted");
     }
 }
