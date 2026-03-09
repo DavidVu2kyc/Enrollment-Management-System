@@ -10,11 +10,11 @@ export const load: PageServerLoad = async ({ locals }) => {
   };
 };
 
-// update enrollments and drop enrollments
+// update enrollments and drop enrollments - confirm registration ( CONFIRMED  + ENROLLED )
 export const actions = {
   update: async ({ request, locals, fetch }) => {
     const formData = await request.formData();
-    const token = locals.token?? "";
+    const token = locals.token ?? "";
 
     const enrollmentId = formData.get("enrollmentId");
     const status = formData.get("status");
@@ -24,11 +24,10 @@ export const actions = {
     }
 
     try {
-    
       const client = createServerApiClient(token, fetch);
       const result = await client.put<EnrollmentResponse>(
         `/enrollments/${enrollmentId}/status`,
-        { status }
+        { status },
       );
       return { success: true, enrollment: result };
     } catch (error: any) {
@@ -38,26 +37,55 @@ export const actions = {
     }
   },
 
+  // Drop /with draw from a course
   delete: async ({ request, locals, fetch }) => {
     const formData = await request.formData();
-    const token = locals.token?? "";
-
+    const token = locals.token ?? "";
+    debugger;
     const enrollmentId = formData.get("enrollmentId");
     const studentId = formData.get("studentId");
 
     if (!enrollmentId || !studentId) {
-      return fail(400, { message: "Enrollment ID and student ID are required" });
+      return fail(400, {
+        message: "Enrollment ID and student ID are required",
+      });
     }
 
     try {
       const client = createServerApiClient(token, fetch);
-      const result = await client.delete<EnrollmentResponse>(
-        `/enrollments/${enrollmentId}?studentId=${studentId}`
+      const result = await client.delete<void>(
+        `/enrollments/${enrollmentId}?studentId=${studentId}`,
       );
       return { success: true, enrollment: result };
     } catch (error: any) {
       return fail(error.status ?? 500, {
         message: error.message ?? "Failed to drop enrollment",
+      });
+    }
+  },
+  // ── Enroll in a new course (from modal form on this page) ──
+  create: async ({ request, locals, fetch }) => {
+    const formData = await request.formData();
+    const token = locals.token ?? "";
+
+    const sectionId = formData.get("sectionId");
+    const studentId = formData.get("studentId");
+
+    if (!sectionId || !studentId) {
+      return fail(400, { message: "Section ID and student ID are required" });
+    }
+
+    try {
+      const client = createServerApiClient(token, fetch);
+      const result = await client.post<EnrollmentResponse>("/enrollments", {
+        sectionId: Number(sectionId),
+        studentId: Number(studentId),
+        status: "PENDING",
+      });
+      return { success: true, enrollment: result };
+    } catch (error: any) {
+      return fail(error.status ?? 500, {
+        message: error.message ?? "Failed to create enrollment",
       });
     }
   },

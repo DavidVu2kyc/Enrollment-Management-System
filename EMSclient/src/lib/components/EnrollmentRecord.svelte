@@ -119,8 +119,6 @@
           class="course-info"
           class:clickable={!!onShow}
           onclick={() => onShow && onShow(enrollment.enrollmentId)}
-          role={onShow ? "button" : undefined}
-          tabindex={onShow ? 0 : undefined}
           onkeydown={(e) => e.key === "Enter" && onShow && onShow(enrollment.enrollmentId)}
         >
           <div class="course-meta">
