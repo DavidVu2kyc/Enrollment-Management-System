@@ -10,12 +10,12 @@ export const load: PageServerLoad = async ({ params, locals, fetch }) => {
   if (!locals.token) {
     throw error(401, "Unauthorized");
   }
-
-  debugger
   // ✅ Correct arg order: JWT first, fetch second
   const client = createServerApiClient(locals.token, fetch);
+  console.log("Credential: "+ client);
   try {
     // ✅ GET /api/sections — no sectionId here, we want the full catalog
+
     const availableSections = await client.get<SectionResponse[]>("/sections");
     console.log("available sections"+availableSections);
     // ✅ Only fetch when editing an existing record
