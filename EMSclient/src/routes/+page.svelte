@@ -10,18 +10,23 @@
   import { apiClient } from "$lib/api/client";
   import type { StudentResponse } from "$lib/types/student.js";
   import type { EnrollmentResponse } from "$lib/server/section.js";
+  import type { ActionResult } from "@sveltejs/kit";
+  import { deserialize } from "$app/forms";
 
+  //  loading state
   let isLoading = $state(true);
+  let actionError = $state<string | null>(null);
 
   let { data } = $props();
 
   $effect(() => {
-    if ((data as any)?.enrollments) enrollmentsStore.set((data as any).enrollments); // use server data
+    if ((data as any)?.enrollments)
+      enrollmentsStore.set((data as any).enrollments); // use server data
     isLoading = false;
   });
 
   let dashboardStats = $state({
-    enrolledUnits: 0,
+    enrolledUnits: 10,
     activeCourses: 0,
     enrollmentPhase: "Enlistment Open",
     capacityStatus: 85,
@@ -50,26 +55,30 @@
   // Client side data fetching
   onMount(async () => {
     try {
-      debugger
+      debugger;
       if (data?.token) {
         apiClient.setAccessToken(data.token);
       }
 
       // 1. Get current student ID
-      const meResponse = await apiClient.get<StudentResponse>("/students/profile");
+      const meResponse =
+        await apiClient.get<StudentResponse>("/students/profile");
       const studentId = meResponse?.studentId;
 
       if (studentId) {
-        // 2. Fetch enrollments
-        debugger
-        const enrollments = await apiClient.get<EnrollmentResponse[]>(`/enrollments/my/${studentId}`);
-        enrollmentsStore.set(enrollments);
+        // 2. Fetch enrollments first
+        debugger;
+        const enrollments = await apiClient.get<EnrollmentResponse[]>(
+          `/enrollments/my/${studentId}`,
+        );
+        enrollmentsStore.set(enrollments); //filter store reacts automatically
 
         dashboardStats.activeCourses = enrollments.length;
         // Calculate units safely based on available credits or units fields
-        debugger
+        debugger;
         dashboardStats.enrolledUnits = enrollments.reduce(
-          (acc: number, curr: any) => acc + (curr.section?.course?.credits || curr.units || 0),
+          (acc: number, curr: any) =>
+            acc + (curr.section?.course?.credits || curr.units || 0),
           0,
         );
       }
@@ -80,10 +89,100 @@
     }
   });
 
+  // 2.  SHARED ACTION HELPER
+
+  async function submitAction(
+    actionName: string,
+    payload: Record<string, string | number>,
+  ): Promise<ActionResult> {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(payload)) fd.append(k, String(v));
+
+    const res = await fetch(`?/${actionName}`, { method: "POST", body: fd });
+    return deserialize(await res.text());
+  }
+
+  // confirm registration
+  //  EnrollmentRecord "Confirm Registration" button
+  //    → onEnroll(enrollmentId)                  [EnrollmentRecord]
+  //      → onEnrollCourse(enrollmentId)           [EnrollmentList passthrough]
+  //        → handleEnrollCourse(enrollmentId)     [here]
+  //          → optimistic store.update()
+  //          → submitAction("update")             [+page.server.ts: actions.update]
+  //            ✓ success  → store already correct, nothing extra needed
+  //            ✗ failure  → roll back store.update() + show error banner
+  const handleEnrollCourse = async (enrollmentId: number) => {
+    actionError = null;
+
+    // Optimistic: flip card to "ENROLLED" immediately
+    enrollmentsStore.update(enrollmentId, { status: "ENROLLED" });
+
+    const result = await submitAction("update", {
+      enrollmentId,
+      status: "ENROLLED",
+    });
+
+    if (result.type === "failure") {
+      // Roll back
+      enrollmentsStore.update(enrollmentId, { status: "PENDING" });
+      actionError =
+        (result.data as any)?.message ?? "Failed to confirm enrollment";
+    }
+    // On success the server returned the updated record, but our
+    // optimistic update already matches it — no extra work needed.
+  };
+
+  // drop enrollment
+  //  EnrollmentRecord "Drop" button
+  //    → onDelete(enrollmentId)                 [EnrollmentRecord]
+  //      → onDeleteCourse(enrollmentId)         [EnrollmentList passthrough]
+  //        → handleDropCourse(enrollmentId)     [here]
+  //          → optimistic store.remove()
+  //          → submitAction("delete")           [+page.server.ts: actions.delete]
+  //            ✓ success  → store already correct, nothing extra needed
+  //            ✗ failure  → roll back store.update() + show error banner
+
+  const handleDeleteEnrollment = async (enrollmentId: number) => {
+    actionError = null;
+
+    // We need studentId for the DELETE endpoint — grab it from the store
+    const enrollment = enrollmentsStore.all.find(
+      (e) => e.enrollmentId === enrollmentId,
+    );
+    if (!enrollment) return;
+
+    // Optimistic: remove card immediately
+    enrollmentsStore.remove(enrollmentId);
+
+    const result = await submitAction("delete", {
+      enrollmentId,
+      studentId: enrollment.student.studentId,
+    });
+
+    if (result.type === "failure") {
+      // Roll back: re-fetch from server to restore true state
+      const fresh =
+        await apiClient.get<EnrollmentResponse[]>("/enrollments/me");
+      enrollmentsStore.set(fresh);
+      actionError = (result.data as any)?.message ?? "Failed to drop course";
+    }
+  };
+
+  // view or edit details
+  //  EnrollmentRecord course title click
+  //    → onShow(enrollmentId)                    [EnrollmentRecord]
+  //      → onShowEnrollment(enrollmentId)         [EnrollmentList passthrough]
+  //        → handleShowEnrollment(enrollmentId)   [here]
+  //          → goto(`/enrollments/[id]`)
+
+  const handleShowEnrollment = (enrollmentId: number) => {
+    goto(`/enrollments/${enrollmentId}`);
+  };
+
   // derived state
   const cards = $derived([
     {
-      label: "Academic Load",
+      // label: "Academic Load",
       value: `${dashboardStats.enrolledUnits}`,
       unit: "Units",
       icon: "M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0118 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25",
@@ -144,6 +243,25 @@
     goto(`/enrollments/${enrollmentId}`);
   }
 </script>
+
+<!-- ── Error banner ───────────────────────────────────────── -->
+{#if actionError}
+  <div class="error-banner" role="alert">
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path stroke-linecap="round" d="M12 8v4m0 4h.01" />
+    </svg>
+    <span>{actionError}</span>
+    <button onclick={() => (actionError = null)} aria-label="Dismiss">✕</button>
+  </div>
+{/if}
 
 <svelte:head>
   <title>Dashboard — EMS</title>
@@ -250,9 +368,9 @@
         {:else}
           <EnrollmentList
             {isLoading}
-            onDeleteEnrollment={(id: number) => handleDelete(id)}
-            onEnrollCourse={handleEnroll}
-            onShowEnrollment={(enrollmentId : number) => handleShow(enrollmentId)}
+            onDeleteEnrollment={handleDeleteEnrollment}
+            onEnrollCourse={handleEnrollCourse}
+            onShowEnrollment={handleShowEnrollment}
           />
         {/if}
       </div>
