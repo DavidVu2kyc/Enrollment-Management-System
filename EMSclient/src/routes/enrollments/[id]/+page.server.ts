@@ -12,16 +12,22 @@ export const load: PageServerLoad = async ({ params, locals, fetch }) => {
   }
   // ✅ Correct arg order: JWT first, fetch second
   const client = createServerApiClient(locals.token, fetch);
-  console.log("Credential: "+ client);
+  console.log("token : " + locals.token);
   try {
+    
     // ✅ GET /api/sections — no sectionId here, we want the full catalog
-    debugger
+    debugger;
     const availableSections = await client.get<SectionResponse[]>("/sections");
-    console.log("available sections existing"+availableSections);
+    console.log("available sections existing" , availableSections);
+
     // ✅ Only fetch when editing an existing record
     let enrollment: EnrollmentResponse | null = null;
-    if (params.id && params.id !== "new") {
-      enrollment = await client.get<EnrollmentResponse>(`/enrollments/${params.id}`);
+    let sectionId = params.id ;
+   
+    if (sectionId && sectionId !== "new") {
+      enrollment = await client.get<EnrollmentResponse>(
+        `/enrollments/${sectionId}`,
+      );
     }
 
     return { enrollment, availableSections };
@@ -40,30 +46,32 @@ export const actions: Actions = {
 
     const data = await request.formData();
     const sectionId = data.get("sectionId") as string;
-    const status    = data.get("status")    as string;
+    const status = data.get("status") as string;
+    console.log("Data + sectioNid + status : " + data + " " + sectionId + " " + status);
 
-    // ✅ Correct arg order to api client 
+    // ✅ Correct arg order to api client
     const client = createServerApiClient(locals.token, fetch);
 
     try {
       if (params.id && params.id !== "new") {
         // ── UPDATE: PUT /api/enrollments/{id}/status ──────────
         await client.put(`/enrollments/${params.id}/status`, { status });
-
       } else if (sectionId) {
         // ── CREATE: POST /api/enrollments ─────────────────────
-        // ✅ Leading slash was missing
-        debugger
+    
         const me = await client.get<StudentResponse>("/students/profile");
+        console.log("profile existed  : " + me);
+
 
         await client.post("/enrollments", {
           studentId: me.studentId,
           sectionId: Number(sectionId),
           status: "PENDING",
         });
-
       } else {
-        return fail(400, { message: "Section ID is required for new enrollment" });
+        return fail(400, {
+          message: "Section ID is required for new enrollment",
+        });
       }
     } catch (err: any) {
       console.error("Enrollment action error:", err.message);
@@ -76,4 +84,3 @@ export const actions: Actions = {
     redirect(303, "/");
   },
 };
-

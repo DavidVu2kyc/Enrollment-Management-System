@@ -46,7 +46,7 @@ public class SecurityConfig {
                         "/api/degree/**",
                         "/api/terms/**",
 //                        "/api/enrollments/**",
-                        "/api/section/**",
+//                        "/api/sections/**",
 //                        "/api/students/**",
                         "/v3/api-docs",
                         "/v3/api-docs/**", 

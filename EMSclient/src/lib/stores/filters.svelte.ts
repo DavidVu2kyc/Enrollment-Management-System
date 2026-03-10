@@ -5,8 +5,6 @@ class FilterStore {
 	type = $state<EnrollmentFilterType>('all');
 	query = $state('');
 
-	
-
 	get filtered() {
 		const all = enrollmentsStore.all;
 		if (this.type === 'enrolled') {

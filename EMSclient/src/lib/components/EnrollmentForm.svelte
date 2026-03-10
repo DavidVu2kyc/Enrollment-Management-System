@@ -28,7 +28,8 @@
     mode = "new",
   }: Props = $props();
 
-  const initialSectionId = enrollment?.sectionId ?? undefined;
+  
+  const initialSectionId = enrollment?.section?.sectionId ?? undefined;
   const initialStatus: Status = (enrollment?.status as Status) ?? "";
 
   // ✅ superForm declared BEFORE $derived that uses $form
@@ -61,9 +62,9 @@
 
   // ✅ Notifies parent page to fire GET /api/sections/{id}
   const handleSectionChange = (e: Event) => {
-    const id = Number((e.currentTarget as HTMLSelectElement).value);
-    if (id && onSectionChange)
-         onSectionChange(id);
+    const sectionId = Number((e.currentTarget as HTMLSelectElement).value);
+    if (sectionId && onSectionChange)
+         onSectionChange(sectionId);
   };
 
   const statusMeta: Record<
@@ -123,12 +124,12 @@
           Academic Section <span class="req">*</span>
         </label>
         <div class="select-wrap">
-        <!-- showw section available -->
+        <!-- showw section available -fetching with sectionId / enrollmentId -->
           <select
             id="sectionId"
             name="sectionId"
             bind:value={$form.sectionId}
-            onchange={handleSectionChange}
+            onchange={handleSectionChange}  //trigger event when we choose select
             required 
             aria-label="Select course section"
             disabled={isLoading || availableSections.length === 0}

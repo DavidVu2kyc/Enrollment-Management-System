@@ -27,18 +27,21 @@ public class SectionService {
     private final EnrollmentMapper enrollmentMapper;
 
     // list sections
-    public List<SectionResponse> getAll(Long courseId, Long termId) {
-        List<Section> sections = sectionRepository.findByCourse_CourseIdAndTerm_TermId(courseId, termId);
-        return sections.stream().map(sectionMapper::mapToSectionResponse).toList();
+    @Transactional(readOnly = true)
+    public List<SectionResponse> getAll() {
+        List<Section> sections = sectionRepository.findAllWithDetails();
+
+        return sections.stream()
+                .map(sectionMapper::mapToSectionResponse)
+                .toList();
     }
 
-//    get section details
+    // get section details
     @Transactional(readOnly = true)
     public SectionResponse getById(Long sectionId) {
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "Section not found with id: " + sectionId
-                ));
+                        "Section not found with id: " + sectionId));
 
         return sectionMapper.mapToSectionResponse(section);
     }
