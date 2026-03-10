@@ -120,6 +120,7 @@
     {:else if (filterStore.searchedAndFiltered ?? []).length > 0}
       <div class="records-grid">
         {#each filterStore.searchedAndFiltered as enrollment (enrollment.enrollmentId)}
+        <!-- Child component  -->
           <EnrollmentRecord
             enrollment={enrollment as any}
             onDelete={onDeleteEnrollment}

@@ -7,14 +7,17 @@
     type Status,
   } from "$lib/schemas/enrollment.schema";
 
-  import type { EnrollmentResponse } from "$lib/types/enrollment";
+  import type { Enrollment, EnrollmentResponse } from "$lib/types/enrollment";
   import type { SectionResponse } from "$lib/server/section";
 
   interface Props {
-    enrollment?: EnrollmentResponse | null; 
-    availableSections?: SectionResponse[]; 
-    onSubmit?: (data: { sectionId: number; status: Status }) => void;
+    onSubmit?: (data: {
+      sectionId: number;
+      status: Enrollment["status"];
+    }) => void;
     onSectionChange?: (sectionId: number) => void;
+    enrollment?: EnrollmentResponse | null;
+    availableSections?: SectionResponse[];
     isLoading?: boolean;
     mode?: "new" | "edit";
   }
@@ -28,9 +31,16 @@
     mode = "new",
   }: Props = $props();
 
-  
-  const initialSectionId = enrollment?.section?.sectionId ?? undefined;
-  const initialStatus: Status = (enrollment?.status as Status) ?? "";
+  const initialSectionId =
+    (enrollment as any)?.section?.sectionId ??
+    (enrollment as any)?.sectionId ??
+    undefined;
+  const initialStatus: Status = (enrollment?.status as Status) || "PENDING";
+
+  // logging
+  console.log("Enrollment object:", enrollment);
+  console.log("Initial Section ID:", initialSectionId);
+  console.log("Initial Status:", initialStatus);
 
   // ✅ superForm declared BEFORE $derived that uses $form
   const { form, errors, enhance } = superForm(
@@ -38,9 +48,16 @@
     {
       validators: yup(enrollmentSchema),
       SPA: true,
-      onUpdate: ({ form }) => {
+      // submit form updated Response flow -fire to api flow
+      onUpdate: ({ form }) => { 
+        console.log("Form updated:", form);
         if (form.valid && onSubmit) {
-          onSubmit(form.data as { sectionId: number; status: Status });
+          console.log("Form is valid, calling onSubmit with:", form.data);
+          onSubmit(
+            form.data as { sectionId: number; status: Enrollment["status"] },
+          );
+        } else if (!form.valid) {
+          console.error("Form is invalid:", form.errors);
         }
       },
     },
@@ -60,11 +77,10 @@
     }
   });
 
-  // ✅ Notifies parent page to fire GET /api/sections/{id}
+  // ✅ Notifies parent page to fire GET /api/sections/{sectionId}
   const handleSectionChange = (e: Event) => {
     const sectionId = Number((e.currentTarget as HTMLSelectElement).value);
-    if (sectionId && onSectionChange)
-         onSectionChange(sectionId);
+    if (sectionId && onSectionChange) onSectionChange(sectionId); // ← up to parent
   };
 
   const statusMeta: Record<
@@ -83,8 +99,13 @@
     },
     DROPPED: {
       label: "Dropped",
-      color: "rgba(248,113,113,0.15)",
+      color: "rgba(248, 113, 113, 0.15)",
       dot: "#f87171",
+    },
+    CANCELLED: {
+      label: "Cancelled",
+      color: "rgba(156, 163, 175, 0.15)",
+      dot: "#9ca3af",
     },
   };
 
@@ -124,13 +145,14 @@
           Academic Section <span class="req">*</span>
         </label>
         <div class="select-wrap">
-        <!-- showw section available -fetching with sectionId / enrollmentId -->
+          <!-- showw section available -fetching with sectionId / enrollmentId -->
           <select
             id="sectionId"
             name="sectionId"
             bind:value={$form.sectionId}
-            onchange={handleSectionChange}  //trigger event when we choose select
-            required 
+            onchange={handleSectionChange}
+            //trigger event when we choose select
+            required
             aria-label="Select course section"
             disabled={isLoading || availableSections.length === 0}
           >
@@ -141,7 +163,7 @@
               </option>
             {/each}
           </select>
-          
+
           <span class="select-caret">
             <svg
               width="14"
@@ -163,7 +185,7 @@
         {#if $errors.sectionId?.[0]}
           <div class="field-error">{$errors.sectionId[0]}</div>
         {/if}
-        {#if availableSections.length === 0} 
+        {#if availableSections.length === 0}
           <div class="empty-hint">
             No sections available in this catalog period
           </div>
@@ -368,6 +390,7 @@
         <!-- ✅ onclick not on:click -->
         Discard
       </button>
+      <!--  add update enrollment record with sectionId         -->
       <button
         type="submit"
         class="btn-submit"
@@ -391,7 +414,7 @@
               d="M5 13l4 4L19 7"
             />
           </svg>
-          Apply Changes
+          Apply Changes For Enrollment Form
         {:else}
           <svg
             width="13"

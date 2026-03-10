@@ -115,16 +115,15 @@
     actionError = null;
 
     // Optimistic: flip card to "ENROLLED" immediately
-    enrollmentsStore.update(enrollmentId, { status: "ENROLLED" });
+    enrollmentsStore.update(enrollmentId, { status: "ENROLLED" }); // optimistic
 
     const result = await submitAction("update", {
-      enrollmentId,
-      status: "ENROLLED",
+      enrollmentId,  // status removed, backend doesn't need it
     });
 
     if (result.type === "failure") {
       // Roll back
-      enrollmentsStore.update(enrollmentId, { status: "PENDING" });
+      enrollmentsStore.update(enrollmentId, { status: "PENDING" });  // rollback
       actionError =
         (result.data as any)?.message ?? "Failed to confirm enrollment";
     }
@@ -366,6 +365,7 @@
             {/each}
           </div>
         {:else}
+        <!-- parent component   -->
           <EnrollmentList
             {isLoading}
             onDeleteEnrollment={handleDeleteEnrollment}

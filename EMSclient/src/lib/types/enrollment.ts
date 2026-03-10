@@ -12,14 +12,14 @@ export interface Course {
 }
 
 // ✅ FIX: added 'CANCELLED' to the shared union so it's defined once and reused
-export type EnrollmentStatus = 'PENDING' | 'ENROLLED' | 'DROPPED' ;
+export type EnrollmentStatus = 'PENDING' | 'ENROLLED' | 'DROPPED' | 'CANCELLED';
 
 // Enrollment
 export interface Enrollment {
 	enrollmentId: number
 	studentId: number;
 	sectionId: number;
-	status: 'PENDING' | 'ENROLLED' | 'DROPPED';
+	status: EnrollmentStatus;
 	course?: Course;
 	section?: Section;
 	enrolledAt: string;
@@ -30,7 +30,7 @@ export interface EnrollmentResponse {
 	enrollmentId: number
 	student: StudentResponse;
 	section: SectionResponse;
-	status: 'PENDING' | 'ENROLLED' | 'DROPPED';
+	status: EnrollmentStatus;
 	enrolledAt: string;
 	message?: string;
 
@@ -42,10 +42,9 @@ export interface CreateEnrollmentRequest {
 }
 
 export interface UpdateEnrollmentRequest {
-	status?: 'PENDING' | 'ENROLLED' | 'DROPPED';
-	isEnrolled?: boolean;
+	status?: EnrollmentStatus;
+	sectionId?: number;
 }
 
 // Filter state
 export type EnrollmentFilterType = 'all' | 'enrolled' | 'pending' | 'dropped';
-

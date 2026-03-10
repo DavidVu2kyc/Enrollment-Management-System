@@ -1,50 +1,42 @@
-<!-- create new enrollments -->
+<!-- src/routes/enrollments/new/+page.svelte -->
 <script lang="ts">
   import EnrollmentForm from "$lib/components/EnrollmentForm.svelte";
-  import { enrollmentsStore } from "$lib/stores/enrollments.svelte";
   import { goto } from "$app/navigation";
-  import type { PageData } from "./$types";
   import { deserialize } from "$app/forms";
-  import type { SectionResponse } from "$lib/server/section"; 
-    import type { ActionResult } from "@sveltejs/kit";
+  import type { ActionResult } from "@sveltejs/kit";
+  import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();
 
   let isLoading = $state(false);
-  let error = $state<string | null>(null);
-
   let submitError = $state<string | null>(null);
 
-  const handleEnroll = async (formData: any) => {
+  const handleEnroll = async (formData: {
+    sectionId?: number;
+    status?: string;
+  }) => {
+
     isLoading = true;
     submitError = null;
+
     try {
       const body = new FormData();
+      if (formData.sectionId)
+        body.append("sectionId", String(formData.sectionId));
 
-      body.append("sectionId", String(formData.sectionId));
-
-      const response = await fetch("?/default", {
-        method: "POST",
-        body,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to enroll in course");
-      }
-
+     const response = await fetch("?/enroll", { method: "POST", body }); //call default enroll 
       const result: ActionResult = deserialize(await response.text());
 
       if (result.type === "failure") {
-        submitError = (result.data as any)?.message ?? "Failed to enroll in course";
+        submitError = (result.data as any)?.message ?? "Failed to enroll";
         return;
       }
-
-       if (result.type === "error") {
+      if (result.type === "error") {
         submitError = result.error?.message ?? "An unexpected error occurred";
         return;
       }
 
-      await goto("/");
+      goto("/");
     } catch (err) {
       submitError = err instanceof Error ? err.message : "An error occurred";
     } finally {
@@ -69,7 +61,6 @@
 
 <div class="page">
   <div class="content">
-    <!-- Back -->
     <a href="/" class="back-link">
       <svg
         width="14"
@@ -88,7 +79,6 @@
       Back to Dashboard
     </a>
 
-    <!-- Header -->
     <div class="header">
       <div class="header-icon">
         <svg
@@ -116,70 +106,32 @@
       </div>
     </div>
 
-    <!-- States -->
-    {#if error}
-      <div class="error-card">
-        <div class="error-icon-wrap">
-          <svg
-            width="22"
-            height="22"
-            fill="none"
-            stroke="#fca5a5"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
+    <div class="form-wrap">
+      {#if submitError}
+        <div class="submit-error" role="alert">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="#fca5a5">
             <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
             />
           </svg>
+          <p>{submitError}</p>
+          <button
+            class="dismiss-btn"
+            onclick={() => (submitError = null)}
+            aria-label="Dismiss">✕</button
+          >
         </div>
-        <p class="error-title">Catalog Unavailable</p>
-        <p class="error-msg">{error}</p>
-        <button
-          class="error-retry-btn"
-          onclick={() => window.location.reload()}
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          Retry
-        </button>
-      </div>
-    {:else}
-      <div class="form-wrap">
-        {#if submitError}
-          <div class="submit-error">
-            <svg width="15" height="15" viewBox="0 0 20 20" fill="#fca5a5">
-              <path
-                fill-rule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <p>{submitError}</p>
-          </div>
-        {/if}
-        <EnrollmentForm
-          availableSections={data.availableSections}
-          onSubmit={handleEnroll}
-          {isLoading}
-          mode="new"
-        />
-      </div>
-    {/if}
+      {/if}
+
+      <EnrollmentForm
+        availableSections={data.availableSections}
+        onSubmit={handleEnroll}
+        {isLoading}
+        mode="new"
+      />
+    </div>
   </div>
 </div>
 
@@ -224,7 +176,6 @@
     margin: 0 auto;
   }
 
-  /* ── Back link ───────────────────────────────── */
   .back-link {
     display: inline-flex;
     align-items: center;
@@ -239,12 +190,10 @@
     transition: color 0.2s;
     animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
-
   .back-link:hover {
     color: rgba(160, 200, 255, 0.85);
   }
 
-  /* ── Header ──────────────────────────────────── */
   .header {
     display: flex;
     align-items: flex-start;
@@ -260,27 +209,16 @@
     height: 58px;
     background: linear-gradient(135deg, #1e4db7, #0d2d7a);
     border-radius: 18px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
     box-shadow:
       0 8px 28px rgba(30, 77, 183, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.15);
     position: relative;
     overflow: hidden;
     animation: iconIn 0.6s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  @keyframes iconIn {
-    from {
-      opacity: 0;
-      transform: scale(0.7) rotate(-10deg);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) rotate(0deg);
-    }
   }
 
   .header-icon::after {
@@ -299,17 +237,6 @@
     animation: sheen 4s 1s ease-in-out infinite;
   }
 
-  @keyframes sheen {
-    0%,
-    75%,
-    100% {
-      transform: translateX(-100%);
-    }
-    40% {
-      transform: translateX(100%);
-    }
-  }
-
   .eyebrow {
     font-size: 0.62rem;
     font-weight: 700;
@@ -324,7 +251,7 @@
     font-style: italic;
     font-size: clamp(1.8rem, 4vw, 2.75rem);
     font-weight: 400;
-    color: #ffffff;
+    color: #fff;
     line-height: 1.05;
     letter-spacing: -0.02em;
     margin: 0 0 0.6rem;
@@ -338,79 +265,6 @@
     max-width: 480px;
   }
 
-  /* ── Error state ─────────────────────────────── */
-  .error-card {
-    background: linear-gradient(
-      135deg,
-      rgba(180, 28, 28, 0.13),
-      rgba(120, 10, 10, 0.18)
-    );
-    border: 1px solid rgba(248, 113, 113, 0.18);
-    border-radius: 24px;
-    padding: 3.5rem 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 1rem;
-    box-shadow:
-      0 16px 48px rgba(180, 28, 28, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    animation: fadeUp 0.5s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  .error-icon-wrap {
-    width: 52px;
-    height: 52px;
-    background: rgba(248, 113, 113, 0.12);
-    border: 1px solid rgba(248, 113, 113, 0.22);
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 0.5rem;
-  }
-
-  .error-title {
-    font-family: "DM Serif Display", serif;
-    font-style: italic;
-    font-size: 1.4rem;
-    color: #fca5a5;
-    margin: 0 0 0.25rem;
-  }
-
-  .error-msg {
-    font-size: 0.83rem;
-    color: rgba(252, 165, 165, 0.6);
-    margin: 0 0 1rem;
-    line-height: 1.55;
-    max-width: 340px;
-  }
-
-  .error-retry-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    background: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.2);
-    color: #fca5a5;
-    border-radius: 10px;
-    padding: 0.7rem 1.4rem;
-    font-family: "DM Sans", sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .error-retry-btn:hover {
-    background: rgba(248, 113, 113, 0.18);
-    transform: translateY(-1px);
-  }
-
-  /* ── Submit error inline ─────────────────────── */
   .submit-error {
     display: flex;
     align-items: center;
@@ -429,8 +283,56 @@
     font-size: 0.82rem;
     color: #fca5a5;
     margin: 0;
+    flex: 1;
   }
 
+  .dismiss-btn {
+    background: none;
+    border: none;
+    color: rgba(252, 165, 165, 0.5);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0;
+    transition: color 0.15s;
+  }
+  .dismiss-btn:hover {
+    color: #fca5a5;
+  }
+
+  .form-wrap {
+    animation: fadeUp 0.5s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes iconIn {
+    from {
+      opacity: 0;
+      transform: scale(0.7) rotate(-10deg);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) rotate(0);
+    }
+  }
+  @keyframes sheen {
+    0%,
+    75%,
+    100% {
+      transform: translateX(-100%);
+    }
+    40% {
+      transform: translateX(100%);
+    }
+  }
   @keyframes shake {
     0%,
     100% {
@@ -447,22 +349,6 @@
     }
     80% {
       transform: translateX(3px);
-    }
-  }
-
-  /* ── Form wrapper ────────────────────────────── */
-  .form-wrap {
-    animation: fadeUp 0.5s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  @keyframes fadeUp {
-    from {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
     }
   }
 </style>

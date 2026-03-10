@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
 };
 
 export const actions: Actions = {
-  default: async ({ request, locals, fetch }) => {
+  enroll: async ({ request, locals, fetch }) => {
     if (!locals.token) {
       return fail(401, { message: "Unauthorized" });
     }

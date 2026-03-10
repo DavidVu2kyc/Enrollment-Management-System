@@ -6,6 +6,6 @@ import lombok.Data;
 
 @Data
 public class UpdateEnrollmentRequest {
-    @NotNull
+    private Long sectionId;
     private Enrollment.Status status;
 }

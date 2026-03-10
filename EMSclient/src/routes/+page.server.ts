@@ -3,7 +3,7 @@ import type { EnrollmentResponse } from "$lib/types/enrollment";
 import { fail } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
-// authen with local tokens 
+// authen with local tokens
 export const load: PageServerLoad = async ({ locals }) => {
   return {
     token: locals.token,
@@ -11,13 +11,12 @@ export const load: PageServerLoad = async ({ locals }) => {
   };
 };
 
-// update enrollments and drop enrollments - confirm registration ( PENDING  + ENROLLED )
+// update enrollments and drop enrollments - confirm registration ( PENDING  -> ROLLED ) -allow students testing -already fixed in backend
 export const actions = {
-    // ── Confirm registration (PENDING → ENROLLED) ──
+  // ── Confirm registration (PENDING → ENROLLED) ──
   update: async ({ request, locals, fetch }) => {
     const formData = await request.formData();
     const token = locals.token ?? "";
-
     const enrollmentId = formData.get("enrollmentId");
     const status = formData.get("status");
 
@@ -27,8 +26,12 @@ export const actions = {
 
     try {
       const client = createServerApiClient(token, fetch);
-      const result = await client.put<EnrollmentResponse>(`/enrollments/${enrollmentId}/status`,{ status },
-);
+      // update request confirmation
+      // update and confirm registration 
+      const result = await client.put<EnrollmentResponse>(
+        `/enrollments/${enrollmentId}/apply`, // ← was /status, now /apply
+        // { status },
+      );
       return { success: true, enrollment: result };
     } catch (error: any) {
       return fail(error.status ?? 500, {
@@ -41,7 +44,7 @@ export const actions = {
   delete: async ({ request, locals, fetch }) => {
     const formData = await request.formData();
     const token = locals.token ?? "";
-    debugger;
+
     const enrollmentId = formData.get("enrollmentId");
     const studentId = formData.get("studentId");
 
@@ -53,7 +56,9 @@ export const actions = {
 
     try {
       const client = createServerApiClient(token, fetch);
-      const result = await client.delete<void>(`/enrollments/${enrollmentId}?studentId=${studentId}`,);
+      const result = await client.delete<void>(
+        `/enrollments/${enrollmentId}?studentId=${studentId}`,
+      );
       return { success: true, enrollment: result };
     } catch (error: any) {
       return fail(error.status ?? 500, {
