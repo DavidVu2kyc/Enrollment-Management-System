@@ -7,14 +7,12 @@
     type Status,
   } from "$lib/schemas/enrollment.schema";
 
-  // ✅ Removed duplicate `import type { Enrollment, Enrollment }`
-  // ✅ Uses EnrollmentResponse (API shape) not the local Enrollment model
   import type { EnrollmentResponse } from "$lib/types/enrollment";
   import type { SectionResponse } from "$lib/server/section";
 
   interface Props {
-    enrollment?: EnrollmentResponse | null; // ✅ was `EnrollmentR` (undefined type)
-    availableSections?: SectionResponse[]; // ✅ was Section[] (wrong type)
+    enrollment?: EnrollmentResponse | null; 
+    availableSections?: SectionResponse[]; 
     onSubmit?: (data: { sectionId: number; status: Status }) => void;
     onSectionChange?: (sectionId: number) => void;
     isLoading?: boolean;
@@ -31,7 +29,7 @@
   }: Props = $props();
 
   const initialSectionId = enrollment?.sectionId ?? undefined;
-  const initialStatus: Status = (enrollment?.status as Status) ?? "PENDING";
+  const initialStatus: Status = (enrollment?.status as Status) ?? "";
 
   // ✅ superForm declared BEFORE $derived that uses $form
   const { form, errors, enhance } = superForm(
@@ -56,7 +54,7 @@
   // Sync form when enrollment prop changes (SSR data arrives after mount)
   $effect(() => {
     if (enrollment) {
-      $form.sectionId = enrollment.sectionId;
+      $form.sectionId = enrollment.section.sectionId;
       $form.status = enrollment.status as Status;
     }
   });
@@ -64,7 +62,8 @@
   // ✅ Notifies parent page to fire GET /api/sections/{id}
   const handleSectionChange = (e: Event) => {
     const id = Number((e.currentTarget as HTMLSelectElement).value);
-    if (id && onSectionChange) onSectionChange(id);
+    if (id && onSectionChange)
+         onSectionChange(id);
   };
 
   const statusMeta: Record<
@@ -124,12 +123,13 @@
           Academic Section <span class="req">*</span>
         </label>
         <div class="select-wrap">
+        <!-- showw section available -->
           <select
             id="sectionId"
             name="sectionId"
             bind:value={$form.sectionId}
             onchange={handleSectionChange}
-            required
+            required 
             aria-label="Select course section"
             disabled={isLoading || availableSections.length === 0}
           >
@@ -140,6 +140,7 @@
               </option>
             {/each}
           </select>
+          
           <span class="select-caret">
             <svg
               width="14"
@@ -161,7 +162,7 @@
         {#if $errors.sectionId?.[0]}
           <div class="field-error">{$errors.sectionId[0]}</div>
         {/if}
-        {#if availableSections.length === 0}
+        {#if availableSections.length === 0} 
           <div class="empty-hint">
             No sections available in this catalog period
           </div>

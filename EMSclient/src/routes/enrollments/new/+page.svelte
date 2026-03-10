@@ -4,11 +4,15 @@
   import { enrollmentsStore } from "$lib/stores/enrollments.svelte";
   import { goto } from "$app/navigation";
   import type { PageData } from "./$types";
+  import { deserialize } from "$app/forms";
+  import type { SectionResponse } from "$lib/server/section"; 
+    import type { ActionResult } from "@sveltejs/kit";
 
   let { data }: { data: PageData } = $props();
 
   let isLoading = $state(false);
   let error = $state<string | null>(null);
+
   let submitError = $state<string | null>(null);
 
   const handleEnroll = async (formData: any) => {
@@ -16,7 +20,8 @@
     submitError = null;
     try {
       const body = new FormData();
-      body.append("sectionId", formData.sectionId);
+
+      body.append("sectionId", String(formData.sectionId));
 
       const response = await fetch("?/default", {
         method: "POST",
@@ -27,13 +32,19 @@
         throw new Error("Failed to enroll in course");
       }
 
-      const result = await response.json();
-      const actionResult = result.data ? JSON.parse(result.data) : null;
-      if (actionResult && !actionResult[0]?.success) {
-        throw new Error(actionResult[0]?.error || "Failed to enroll in course");
+      const result: ActionResult = deserialize(await response.text());
+
+      if (result.type === "failure") {
+        submitError = (result.data as any)?.message ?? "Failed to enroll in course";
+        return;
       }
 
-      await goto("/enrollments");
+       if (result.type === "error") {
+        submitError = result.error?.message ?? "An unexpected error occurred";
+        return;
+      }
+
+      await goto("/");
     } catch (err) {
       submitError = err instanceof Error ? err.message : "An error occurred";
     } finally {

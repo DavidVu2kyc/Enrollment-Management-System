@@ -23,10 +23,12 @@
     filterStore.setQuery(search);
   });
 
+  
   const filterOptions = [
     { label: "All", type: "all" },
     { label: "Enrolled", type: "enrolled" },
     { label: "Pending", type: "pending" },
+    { label: "Dropped",  type: "dropped"  },
   ];
 </script>
 

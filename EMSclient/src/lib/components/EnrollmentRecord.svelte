@@ -5,6 +5,7 @@
 
     interface Props {
       enrollment: Enrollment;
+      onUpdate?: (enrollmentId: number) => void;
       onDelete?: (enrollmentId: number) => void;
       onEnroll?: (enrollmentId: number) => void;
       onShow?: (enrollmentId: number) => void;
@@ -142,8 +143,8 @@
             {enrollment.section?.course?.title ?? "General Subject"}
           </h3>
 
-          {#if enrollment.section?.course?.description}
-            <p class="course-desc">{enrollment.section.course.description}</p>
+          {#if enrollment.section?.course?.units}
+            <p class="course-desc">Units: {enrollment.section.course.units}</p>
           {/if}
         </svelte:element>
 

@@ -87,8 +87,6 @@ public class EnrollmentService {
         return enrollmentMapper.mapToEnrollmentResponse(enrollment);
     }
 
-
-
     // get the current student's enrollment list ( EAF)
     @Transactional
     public List<EnrollmentResponse> getMyEnrollments(Long studentId) {
@@ -102,8 +100,6 @@ public class EnrollmentService {
                 .map(enrollmentMapper::mapToEnrollmentResponse)
                 .toList();
     }
-
-
 
     // update enrollment status - ADMIN ROLE only
     public EnrollmentResponse updateStatus(Long enrollmentId, UpdateEnrollmentRequest updateEnrollmentRequest) {

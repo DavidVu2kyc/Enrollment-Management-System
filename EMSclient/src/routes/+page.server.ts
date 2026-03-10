@@ -1,8 +1,9 @@
 import { createServerApiClient } from "$lib/api/client";
 import type { EnrollmentResponse } from "$lib/types/enrollment";
-import { fail } from "sveltekit-superforms";
+import { fail } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
+// authen with local tokens 
 export const load: PageServerLoad = async ({ locals }) => {
   return {
     token: locals.token,
@@ -10,8 +11,9 @@ export const load: PageServerLoad = async ({ locals }) => {
   };
 };
 
-// update enrollments and drop enrollments - confirm registration ( CONFIRMED  + ENROLLED )
+// update enrollments and drop enrollments - confirm registration ( PENDING  + ENROLLED )
 export const actions = {
+    // ── Confirm registration (PENDING → ENROLLED) ──
   update: async ({ request, locals, fetch }) => {
     const formData = await request.formData();
     const token = locals.token ?? "";
@@ -25,10 +27,8 @@ export const actions = {
 
     try {
       const client = createServerApiClient(token, fetch);
-      const result = await client.put<EnrollmentResponse>(
-        `/enrollments/${enrollmentId}/status`,
-        { status },
-      );
+      const result = await client.put<EnrollmentResponse>(`/enrollments/${enrollmentId}/status`,{ status },
+);
       return { success: true, enrollment: result };
     } catch (error: any) {
       return fail(error.status ?? 500, {
@@ -37,7 +37,7 @@ export const actions = {
     }
   },
 
-  // Drop /with draw from a course
+  // Drop with draw from a course
   delete: async ({ request, locals, fetch }) => {
     const formData = await request.formData();
     const token = locals.token ?? "";
@@ -53,9 +53,7 @@ export const actions = {
 
     try {
       const client = createServerApiClient(token, fetch);
-      const result = await client.delete<void>(
-        `/enrollments/${enrollmentId}?studentId=${studentId}`,
-      );
+      const result = await client.delete<void>(`/enrollments/${enrollmentId}?studentId=${studentId}`,);
       return { success: true, enrollment: result };
     } catch (error: any) {
       return fail(error.status ?? 500, {

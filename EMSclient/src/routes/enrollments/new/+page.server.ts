@@ -2,6 +2,8 @@ import { error, fail, redirect } from "@sveltejs/kit";
 import type { PageServerLoad, Actions } from "./$types";
 import { createServerApiClient } from "$lib/api/client";
 import type { Section } from "$lib/types/section";
+import type { SectionResponse } from "$lib/server/section";
+import type { StudentResponse } from "$lib/types/student";
 
 export const load: PageServerLoad = async ({ locals, fetch }) => {
   if (!locals.token) {
@@ -11,10 +13,12 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
   const client = createServerApiClient(locals.token, fetch);
 
   try {
-    const availableSections = await client.get<Section[]>("/sections");
+    //  SectionResponse[] to match EnrollmentForm's availableSections prop
+    const availableSections = await client.get<SectionResponse[]>("/sections");
 
     return {
       availableSections,
+      token: locals.token,
     };
   } catch (err: any) {
     console.error("Failed to load sections:", err.message);
@@ -38,11 +42,13 @@ export const actions: Actions = {
     const client = createServerApiClient(locals.token, fetch);
 
     try {
-      const meResponse = await client.get<any>("/students/me");
+      const meResponse = await client.get<StudentResponse>("/students/profile");
+      const studentId = meResponse?.studentId;
 
       await client.post("/enrollments", {
-        studentId: meResponse.studentId,
-        sectionId,
+        studentId: Number(studentId),
+        sectionId: Number(sectionId),
+        status: "PENDING",
       });
     } catch (err: any) {
       console.error("Enrollment creation error:", err.message);
@@ -50,7 +56,7 @@ export const actions: Actions = {
         message: err.message || "Failed to enroll in section",
       });
     }
-
-    throw redirect(303, "/enrollments");
+    // redirect to dashboard
+    throw redirect(303, "/");
   },
 };

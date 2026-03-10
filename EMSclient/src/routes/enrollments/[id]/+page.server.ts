@@ -15,9 +15,9 @@ export const load: PageServerLoad = async ({ params, locals, fetch }) => {
   console.log("Credential: "+ client);
   try {
     // ✅ GET /api/sections — no sectionId here, we want the full catalog
-
+    debugger
     const availableSections = await client.get<SectionResponse[]>("/sections");
-    console.log("available sections"+availableSections);
+    console.log("available sections existing"+availableSections);
     // ✅ Only fetch when editing an existing record
     let enrollment: EnrollmentResponse | null = null;
     if (params.id && params.id !== "new") {

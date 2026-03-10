@@ -19,7 +19,7 @@ export interface RoomResponse {
 }
 
 /** Matches backend SectionResponse DTO */
-export interface SectionResponse {
+export interface  SectionResponse {
   sectionId: number;
   sectionCode: string;
   course: CourseResponse;
