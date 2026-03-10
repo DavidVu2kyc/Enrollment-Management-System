@@ -2,23 +2,18 @@
 import { error, fail, redirect } from "@sveltejs/kit";
 import type { PageServerLoad, Actions } from "./$types";
 import { createServerApiClient } from "$lib/api/client";
-import type { Enrollment, EnrollmentResponse } from "$lib/types/enrollment";
+import type { EnrollmentResponse } from "$lib/types/enrollment";
 import type { SectionResponse } from "$lib/server/section";
 import type { StudentResponse } from "$lib/types/student";
 
 export const load: PageServerLoad = async ({ params, locals, fetch }) => {
-  if (!locals.token) {
-    throw error(401, "Unauthorized");
-  }
-  // ✅ Correct arg order: JWT first, fetch second
-  const client = createServerApiClient(locals.token, fetch);
-  console.log("Credential: "+ client);
-  try {
-    // ✅ GET /api/sections — no sectionId here, we want the full catalog
+  if (!locals.token) throw error(401, "Unauthorized");
 
+  const client = createServerApiClient(locals.token, fetch);
+
+  try {
     const availableSections = await client.get<SectionResponse[]>("/sections");
-    console.log("available sections"+availableSections);
-    // ✅ Only fetch when editing an existing record
+
     let enrollment: EnrollmentResponse | null = null;
     if (params.id && params.id !== "new") {
       enrollment = await client.get<EnrollmentResponse>(`/enrollments/${params.id}`);
@@ -26,42 +21,42 @@ export const load: PageServerLoad = async ({ params, locals, fetch }) => {
 
     return { enrollment, availableSections };
   } catch (err: any) {
-    console.error("Failed to load enrollment data: in detail ", err.message);
-    throw error(500, "Failed to load enrollment data in detail ");
+    console.error("Failed to load enrollment data:", err.message);
+    throw error(500, "Failed to load enrollment data");
   }
 };
 
 export const actions: Actions = {
-  default: async ({ request, params, locals, fetch }) => {
-    // fetch token first
-    if (!locals.token) {
-      return fail(401, { message: "Unauthorized" });
-    }
+  save: async ({ request, params, locals, fetch }) => {  // ← renamed from "default"
+    if (!locals.token) return fail(401, { message: "Unauthorized" });
 
-    const data = await request.formData();
-    const sectionId = data.get("sectionId") as string;
-    const status    = data.get("status")    as string;
-
-    // ✅ Correct arg order to api client 
-    const client = createServerApiClient(locals.token, fetch);
+    const data      = await request.formData();
+    const sectionId = data.get("sectionId") as string | null;
+    const status    = data.get("status")    as string | null;
+    const client    = createServerApiClient(locals.token, fetch);
 
     try {
+      let enrollment: EnrollmentResponse;
+
       if (params.id && params.id !== "new") {
-        // ── UPDATE: PUT /api/enrollments/{id}/status ──────────
-        await client.put(`/enrollments/${params.id}/status`, { status });
-
+        // ── EDIT: PUT /apply accepts sectionId + status ──
+        enrollment = await client.put<EnrollmentResponse>(
+          `/enrollments/${params.id}/apply`,   // ← was /registration
+          {
+            ...(sectionId ? { sectionId: Number(sectionId) } : {}),
+            ...(status    ? { status }                        : {}),
+          },
+        );
+        return { enrollment };                 // ← return so store can sync
       } else if (sectionId) {
-        // ── CREATE: POST /api/enrollments ─────────────────────
-        // ✅ Leading slash was missing
-        debugger
+        // ── CREATE: POST /enrollments ─────────────────────
         const me = await client.get<StudentResponse>("/students/profile");
-
-        await client.post("/enrollments", {
+        enrollment = await client.post<EnrollmentResponse>("/enrollments", {
           studentId: me.studentId,
           sectionId: Number(sectionId),
           status: "PENDING",
         });
-
+        return { enrollment };
       } else {
         return fail(400, { message: "Section ID is required for new enrollment" });
       }
@@ -71,9 +66,5 @@ export const actions: Actions = {
         message: err.message ?? "Failed to process enrollment",
       });
     }
-
-    // ✅ Redirect back to the dashboard, not /enrollments (which may not exist)
-    redirect(303, "/");
   },
 };
-

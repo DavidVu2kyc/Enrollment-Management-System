@@ -23,8 +23,8 @@ public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
 
-    @PostMapping
-    public ResponseEntity<EnrollmentResponse> create(@Valid @RequestBody EnrollmentRequest request) {
+    @PostMapping()
+    public ResponseEntity<EnrollmentResponse> enrollNew(@Valid @RequestBody EnrollmentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(enrollmentService.enlistStudent(request.getStudentId(), request));
     }
@@ -36,16 +36,23 @@ public class EnrollmentController {
     }
 
 
-    @GetMapping("/{enrollmentId}")
-    public ResponseEntity<EnrollmentResponse> getEnrollmentDetails(@PathVariable Long enrollmentId) {
-        return ResponseEntity.ok(enrollmentService.getEnrollmentById(enrollmentId));
+    @PutMapping("/{enrollmentId}/registration")
+    public ResponseEntity<EnrollmentResponse> updateEnrollmentRegistration(@PathVariable Long enrollmentId, @PathVariable UpdateEnrollmentRequest request) {
+        //    pending to enrolled status
+        return ResponseEntity.ok(enrollmentService.updateRegistration(enrollmentId, request));
     }
 
-
-    @PutMapping("/{enrollmentId}/status")
-    public ResponseEntity<EnrollmentResponse> updateStatus(@PathVariable Long enrollmentId, @Valid @RequestBody UpdateEnrollmentRequest request) {
-        return ResponseEntity.ok(enrollmentService.updateStatus(enrollmentId, request));
+    //    update changes on enrollment details ( enrollmentId , sectionId  amd status ) PENDING -> ENROLLED
+    @PutMapping("/{enrollmentId}/apply")
+    public ResponseEntity<EnrollmentResponse> updateEnrollmentSelection(@PathVariable Long enrollmentId, @Valid @RequestBody UpdateEnrollmentRequest request) {
+        return ResponseEntity.ok(enrollmentService.confirmChanges(enrollmentId, request));
     }
+
+    @PutMapping("/{enrollmentId}/confirm")
+    public ResponseEntity<EnrollmentResponse> confirm(@PathVariable Long enrollmentId) {
+        return ResponseEntity.ok(enrollmentService.confirmRegistration(enrollmentId));
+    }
+
 
     @GetMapping("/{enrollmentId}")
     public ResponseEntity<EnrollmentResponse> getEnrollment(@PathVariable Long enrollmentId) {

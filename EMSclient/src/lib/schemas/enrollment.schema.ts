@@ -12,8 +12,7 @@ export type EnrollmentStatus = "PENDING" | "ENROLLED" | "DROPPED" | "CANCELLED";
 export const enrollmentSchema = yup.object({
   studentId: yup
     .number()
-    .typeError("Student ID must be a number.")
-    .required("Institutional Student ID is required."),
+    .optional(),
 
   sectionId: yup
     .number()
@@ -22,15 +21,15 @@ export const enrollmentSchema = yup.object({
 
   term: yup
     .string()
-    .required("Academic Term must be specified."),
+    .optional(),
 
   status: yup
     .mixed<EnrollmentStatus>()
     .oneOf(
-      ["PENDING", "ENROLLED", "DROPPED"],
+      ["PENDING", "ENROLLED", "DROPPED", "CANCELLED"],
       "Invalid enrollment status protocol.",
     )
-    .default("PENDING")
+    .default("")
     .required()
 });
 

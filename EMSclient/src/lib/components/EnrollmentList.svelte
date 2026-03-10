@@ -23,10 +23,12 @@
     filterStore.setQuery(search);
   });
 
+  
   const filterOptions = [
     { label: "All", type: "all" },
     { label: "Enrolled", type: "enrolled" },
     { label: "Pending", type: "pending" },
+    { label: "Dropped",  type: "dropped"  },
   ];
 </script>
 
@@ -118,6 +120,7 @@
     {:else if (filterStore.searchedAndFiltered ?? []).length > 0}
       <div class="records-grid">
         {#each filterStore.searchedAndFiltered as enrollment (enrollment.enrollmentId)}
+        <!-- Child component  -->
           <EnrollmentRecord
             enrollment={enrollment as any}
             onDelete={onDeleteEnrollment}

@@ -1,8 +1,9 @@
 import { createServerApiClient } from "$lib/api/client";
 import type { EnrollmentResponse } from "$lib/types/enrollment";
-import { fail } from "sveltekit-superforms";
+import { fail } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
+// authen with local tokens
 export const load: PageServerLoad = async ({ locals }) => {
   return {
     token: locals.token,
@@ -10,12 +11,12 @@ export const load: PageServerLoad = async ({ locals }) => {
   };
 };
 
-// update enrollments and drop enrollments - confirm registration ( CONFIRMED  + ENROLLED )
+// update enrollments and drop enrollments - confirm registration ( PENDING  -> ROLLED ) -allow students testing -already fixed in backend
 export const actions = {
+  // ── Confirm registration (PENDING → ENROLLED) ──
   update: async ({ request, locals, fetch }) => {
     const formData = await request.formData();
     const token = locals.token ?? "";
-
     const enrollmentId = formData.get("enrollmentId");
     const status = formData.get("status");
 
@@ -25,9 +26,11 @@ export const actions = {
 
     try {
       const client = createServerApiClient(token, fetch);
+      // update request confirmation
+      // update and confirm registration 
       const result = await client.put<EnrollmentResponse>(
-        `/enrollments/${enrollmentId}/status`,
-        { status },
+        `/enrollments/${enrollmentId}/apply`, // ← was /status, now /apply
+        // { status },
       );
       return { success: true, enrollment: result };
     } catch (error: any) {
@@ -37,11 +40,11 @@ export const actions = {
     }
   },
 
-  // Drop /with draw from a course
+  // Drop with draw from a course
   delete: async ({ request, locals, fetch }) => {
     const formData = await request.formData();
     const token = locals.token ?? "";
-    debugger;
+
     const enrollmentId = formData.get("enrollmentId");
     const studentId = formData.get("studentId");
 

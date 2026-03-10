@@ -3,6 +3,7 @@ package com.obu.ems.service;
 import com.obu.ems.dto.EnrollmentRequest;
 import com.obu.ems.dto.EnrollmentResponse;
 import com.obu.ems.dto.UpdateEnrollmentRequest;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import com.obu.ems.exception.BadRequestException;
 import com.obu.ems.exception.ConflictException;
@@ -16,6 +17,7 @@ import com.obu.ems.repository.SectionRepository;
 import com.obu.ems.repository.StudentRepository;
 import com.obu.ems.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -47,32 +49,24 @@ public class EnrollmentService {
         }
 
         // validate and fetch student
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found."));
+        Student student = studentRepository.findById(studentId).orElseThrow(() -> new ResourceNotFoundException("Student not found."));
 
         // validate and fetch section
-        Section section = sectionRepository.findById(enrollmentRequest.getSectionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Section not found."));
+        Section section = sectionRepository.findById(enrollmentRequest.getSectionId()).orElseThrow(() -> new ResourceNotFoundException("Section not found."));
 
         // Check if already enrolled
-        Optional<Enrollment> existingEnrollment = enrollmentRepository
-                .findByStudent_StudentIdAndSection_SectionId(studentId, enrollmentRequest.getSectionId());
+        Optional<Enrollment> existingEnrollment = enrollmentRepository.findByStudent_StudentIdAndSection_SectionId(studentId, enrollmentRequest.getSectionId());
         if (existingEnrollment.isPresent()) {
             throw new ConflictException("Student is already enrolled in this section.");
         }
 
         // Check section capacity
-        long currentEnrollments = enrollmentRepository
-                .countBySection_SectionIdAndStatus(enrollmentRequest.getSectionId(), Enrollment.Status.ENROLLED);
+        long currentEnrollments = enrollmentRepository.countBySection_SectionIdAndStatus(enrollmentRequest.getSectionId(), Enrollment.Status.ENROLLED);
         if (currentEnrollments >= section.getMaxSeats()) {
             throw new ConflictException("Section is already full.");
         }
 
-        Enrollment enrollment = Enrollment.builder()
-                .student(student)
-                .section(section)
-                .status(Enrollment.Status.PENDING)
-                .build();
+        Enrollment enrollment = Enrollment.builder().student(student).section(section).status(Enrollment.Status.PENDING).build();
 
         enrollment = enrollmentRepository.save(enrollment);
 
@@ -82,12 +76,9 @@ public class EnrollmentService {
 
     @Transactional
     public EnrollmentResponse getEnrollment(Long enrollmentId) {
-        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId).orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
         return enrollmentMapper.mapToEnrollmentResponse(enrollment);
     }
-
-
 
     // get the current student's enrollment list ( EAF)
     @Transactional
@@ -98,42 +89,105 @@ public class EnrollmentService {
             throw new ResourceNotFoundException("No enrollments found for the given student.");
         }
 
-        return enrollments.stream()
-                .map(enrollmentMapper::mapToEnrollmentResponse)
-                .toList();
+        return enrollments.stream().map(enrollmentMapper::mapToEnrollmentResponse).toList();
     }
 
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN') or @enrollmentSecurity.isOwner(#enrollmentId, authentication.name)")
+    public EnrollmentResponse updateStatus(Long enrollmentId, UpdateEnrollmentRequest request) {
 
+        Enrollment enroll = enrollmentRepository.findById(enrollmentId).orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
 
-    // update enrollment status - ADMIN ROLE only
-    public EnrollmentResponse updateStatus(Long enrollmentId, UpdateEnrollmentRequest updateEnrollmentRequest) {
-        // enrollment verification exists
-        Enrollment enroll = enrollmentRepository.findById(enrollmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
-
-        // Role check : Admin only
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT"));
-
-        if (!isAdmin) {
-            throw new AccessDeniedException("Only administrators can update enrollment statuses.");
+        if (request.getSectionId() != null) {
+            Section section = sectionRepository.findById(request.getSectionId()).orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+            enroll.setSection(section);
         }
 
-        // update enrollment status ( Pending -> Enrolled , enrolled ->dropped )
-        enroll.setStatus(updateEnrollmentRequest.getStatus());
+        if (request.getStatus() != null) {
+            enroll.setStatus(request.getStatus());
+        }
+
         enroll = enrollmentRepository.save(enroll);
         return enrollmentMapper.mapToEnrollmentResponse(enroll);
     }
 
-    // drop enrollment -( student or ADMIN )
-    public EnrollmentResponse drop(Long studentId, Long enrollmentId) {
-        // verify enrollment exists
+    //  confirm registration-apply changes
+    @Transactional
+    public EnrollmentResponse updateRegistration(Long enrollmentId, UpdateEnrollmentRequest request) {
+
         Enrollment enroll = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
 
+        if (request.getSectionId() != null) {
+
+            Long studentId = enroll.getStudent().getStudentId();
+            Long sectionId = request.getSectionId();
+
+            // check duplicate enrollment
+            if (enrollmentRepository.existsByStudentStudentIdAndSectionSectionId(studentId, sectionId)) {
+                throw new IllegalStateException("Student already enrolled in this section.");
+            }
+
+            Section section = sectionRepository.findById(sectionId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+
+            enroll.setSection(section);
+        }
+
+        if (request.getStatus() != null) {
+            enroll.setStatus(request.getStatus());
+        }
+
+        enroll = enrollmentRepository.save(enroll);
+
+        return enrollmentMapper.mapToEnrollmentResponse(enroll);
+    }
+
+    @Transactional
+    public EnrollmentResponse confirmChanges(Long enrollmentId, UpdateEnrollmentRequest request) {
+        Enrollment enroll = enrollmentRepository.findById(enrollmentId).orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+
+        if (request.getSectionId() != null) {
+            Section section = sectionRepository.findById(request.getSectionId()).orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+            enroll.setSection(section);
+        }
+
+        if (request.getStatus() != null) {
+            enroll.setStatus(request.getStatus());
+        }
+
+        enroll = enrollmentRepository.save(enroll);
+        return enrollmentMapper.mapToEnrollmentResponse(enroll);
+    }
+
+
+    @Transactional
+    public EnrollmentResponse confirmRegistration(Long enrollmentId) {
+
+        Enrollment enroll = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+
+        if (enroll.getStatus() != Enrollment.Status.PENDING) {
+            throw new IllegalStateException("Only pending enrollments can be confirmed.");
+        }
+
+        enroll.setStatus(Enrollment.Status.ENROLLED);
+
+        enroll = enrollmentRepository.save(enroll);
+
+        return enrollmentMapper.mapToEnrollmentResponse(enroll);
+    }
+
+
+    @Transactional
+    // drop enrollment -( student or ADMIN )
+    public EnrollmentResponse drop(Long studentId, Long enrollmentId) {
+        // verify enrollment exists
+        Enrollment enroll = enrollmentRepository.findById(enrollmentId).orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+
         // Authentication context for role check
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT"));
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         // Students can only drop their own enrollments
         if (!isAdmin && !enroll.getStudent().getStudentId().equals(studentId)) {
@@ -144,16 +198,12 @@ public class EnrollmentService {
         if (isAdmin) {
             // hard delete
             enrollmentRepository.delete(enroll);
-            return EnrollmentResponse.builder()
-                    .message("Enrollment permanently removed (Hard Delete).")
-                    .build();
+            return EnrollmentResponse.builder().message("Enrollment permanently removed (Hard Delete).").build();
         } else {
             // soft delete
             enroll.setStatus(Enrollment.Status.DROPPED);
             enrollmentRepository.save(enroll);
-            return EnrollmentResponse.builder()
-                    .message("Soft delete successfully")
-                    .build();
+            return EnrollmentResponse.builder().message("Soft delete successfully").build();
         }
     }
 

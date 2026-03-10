@@ -13,6 +13,9 @@ class FilterStore {
 		if (this.type === 'pending') {
 			return all.filter((e) => e.status === 'PENDING');
 		}
+		if (this.type === 'dropped') {
+			return all.filter((e) => e.status === 'DROPPED');
+		}
 		return all;
 	}
 

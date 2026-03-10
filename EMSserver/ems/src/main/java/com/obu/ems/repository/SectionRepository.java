@@ -13,9 +13,11 @@ import java.util.List;
 public interface SectionRepository extends JpaRepository<Section, Long> {
 
     List<Section> findByTerm_TermId(Long termId);
+
     List<Section> findByCourse_CourseIdAndTerm_TermId(Long courseId, Long termId);
-    List<Section> findByCourse_CourseId(Long courseId);
+
     Section findBySectionId(Long sectionId);
+
     /**
      * Finds all sections a student is actively enrolled in for a given term,
      * used to check for schedule conflicts before enlisting.
@@ -29,4 +31,14 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
             """)
     List<Section> findEnrolledSectionsByStudentAndTerm(@Param("studentId") Long studentId,
                                                        @Param("termId") Long termId);
+
+    @Query("""
+                SELECT s FROM Section s
+                JOIN FETCH s.course
+                JOIN FETCH s.term
+                JOIN FETCH s.schedule
+                JOIN FETCH s.room
+            """)
+    List<Section> findAllWithDetails();
+
 }

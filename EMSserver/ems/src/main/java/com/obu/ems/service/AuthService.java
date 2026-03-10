@@ -30,6 +30,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final DegreeRepository degreeRepository;
+
     private final ConcurrentHashMap<String, Long> blacklist = new ConcurrentHashMap<>();
 
 
@@ -111,6 +112,7 @@ public class AuthService {
     }
 
     public void logout(String token) {
+
         if (!jwtTokenProvider.validateToken(token)) {
             throw new IllegalArgumentException("Invalid or expired token");
         }
