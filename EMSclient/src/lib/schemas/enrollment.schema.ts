@@ -4,10 +4,9 @@ export const enrollmentStatuses = [
   "PENDING",
   "ENROLLED",
   "DROPPED",
-  "CANCELLED"
 ] as const;
 
-export type EnrollmentStatus = "PENDING" | "ENROLLED" | "DROPPED" | "CANCELLED";
+export type EnrollmentStatus = "PENDING" | "ENROLLED" | "DROPPED" ;
 
 export const enrollmentSchema = yup.object({
   studentId: yup
@@ -26,10 +25,10 @@ export const enrollmentSchema = yup.object({
   status: yup
     .mixed<EnrollmentStatus>()
     .oneOf(
-      ["PENDING", "ENROLLED", "DROPPED", "CANCELLED"],
+      ["PENDING", "ENROLLED", "DROPPED"],
       "Invalid enrollment status protocol.",
     )
-    .default("")
+    .default("PENDING")
     .required()
 });
 

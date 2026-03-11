@@ -24,20 +24,32 @@
   let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const isEnrolled = $derived(enrollment.status === "ENROLLED");
+  const isDropped = $derived(enrollment.status === "DROPPED");
 
   const handleDeleteClick = () => {
     showDeleteModal = true;
   };
 
-  const handleConfirmDelete = async () => {
-    isDeleting = true;
-    try {
-      if (onDelete) await onDelete(enrollment.enrollmentId);
-    } finally {
-      isDeleting = false;
-      showDeleteModal = false;
-    }
-  };
+const handleConfirmDelete = async () => {
+  isDeleting = true;
+  showDeleteModal = false;  // close modal immediately
+  isDisappearing = true;
+
+  await new Promise((r) => setTimeout(r, 480));
+
+  try {
+    if (onDelete) await onDelete(enrollment.enrollmentId);
+    const title = enrollment.section?.course?.title ?? "Course";
+    triggerToast(`✓ ${title} dropped!`);
+  } catch (error) {
+    const title = enrollment.section?.course?.title ?? "Course";
+    triggerToast(`❌ Failed to drop ${title}`);
+    isDisappearing = false; // 
+  } finally {
+    isDeleting = false;
+    isConfirming = false;
+  }
+};
 
   const triggerToast = (msg: string) => {
     toastMessage = msg;
@@ -57,15 +69,17 @@
 
     try {
       if (onEnroll) await onEnroll(enrollment.enrollmentId);
+      const title = enrollment.section?.course?.title ?? "Course";
+      triggerToast(`✓ ${title} confirmed!`); // ← only on success
     } finally {
       // Brief pause before reappear
       await new Promise((r) => setTimeout(r, 320));
       isDisappearing = false;
       isConfirming = false;
 
-      // Show success toast
+      // Show failed toast
       const title = enrollment.section?.course?.title ?? "Course";
-      triggerToast(`✓ ${title} confirmed!`);
+      // triggerToast(` Enrolled ${title} done!`);
     }
   };
 
@@ -136,7 +150,8 @@
 <div
   class="card"
   class:enrolled={isEnrolled}
-  class:pending={!isEnrolled}
+  class:pending={enrollment.status === "PENDING"}
+  class:dropped={isDropped}
   class:is-hovered={hovered}
   class:is-disappearing={isDisappearing}
   role="article"
@@ -149,7 +164,8 @@
   <div
     class="status-stripe"
     class:stripe-enrolled={isEnrolled}
-    class:stripe-pending={!isEnrolled}
+    class:stripe-pending={enrollment.status === "PENDING"}
+    class:stripe-dropped={isDropped}
   ></div>
 
   <!-- Card body -->
@@ -195,6 +211,11 @@
           <span class="badge badge-enrolled" in:scale={{ duration: 250 }}>
             <span class="badge-dot"></span>
             Confirmed
+          </span>
+        {:else if isDropped}
+          <span class="badge badge-dropped" in:scale={{ duration: 250 }}>
+            <span class="badge-dot"></span>
+            Dropped
           </span>
         {:else}
           <span class="badge badge-pending" in:scale={{ duration: 250 }}>
@@ -267,7 +288,7 @@
 
     <!-- Actions -->
     <div class="actions">
-      {#if !isEnrolled}
+      {#if !isEnrolled && !isDropped}
         <button
           class="action-btn btn-confirm"
           onclick={handleEnroll}
@@ -300,9 +321,9 @@
       <!-- integrate api drop course -->
       <button
         class="action-btn btn-drop"
-        class:btn-drop-solo={isEnrolled}
+        class:btn-drop-solo={isEnrolled || isDropped}
         onclick={handleDeleteClick}
-        disabled={isDeleting}
+        disabled={isDeleting || isDropped}
         aria-label="Drop {enrollment.section?.course?.title}"
       >
         <svg
@@ -319,7 +340,7 @@
             d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
           />
         </svg>
-        Drop Course
+        {isDropped ? "Dropped" : "Drop Course"}
       </button>
     </div>
   </div>
@@ -512,6 +533,10 @@
     );
   }
 
+  .stripe-dropped {
+    background: linear-gradient(180deg, var(--c-red), rgba(248, 113, 113, 0.3));
+  }
+
   .card:hover .status-stripe {
     width: 4px;
   }
@@ -659,6 +684,16 @@
 
   .badge-pending .badge-dot {
     background: var(--c-amber);
+  }
+
+  .badge-dropped {
+    background: var(--c-red-lo);
+    color: var(--c-red);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+  }
+
+  .badge-dropped .badge-dot {
+    background: var(--c-red);
   }
 
   /* ── DETAIL CHIPS ── */

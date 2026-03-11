@@ -3,7 +3,7 @@ import type { PageServerLoad, Actions } from "./$types";
 import { getProfile, updateProfile } from "$lib/server/students";
 
 export const load: PageServerLoad = async ({ fetch, cookies }) => {
-  debugger;
+  // debugger;
   const token = cookies.get("jwt") ?? null;
   if (!token) throw redirect(302, "/login");
   try {
@@ -26,7 +26,7 @@ export const actions: Actions = {
     const profile = await getProfile(token, fetch);
 
     console.log("Updating profile with name:", profile.firstName);
-    debugger;
+    // debugger;
     try {
       const result = await updateProfile(
         profile.studentId,

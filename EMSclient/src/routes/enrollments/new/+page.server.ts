@@ -5,12 +5,13 @@ import type { Section } from "$lib/types/section";
 import type { SectionResponse } from "$lib/server/section";
 import type { StudentResponse } from "$lib/types/student";
 
-export const load: PageServerLoad = async ({ locals, fetch }) => {
+export const load: PageServerLoad = async ({ locals, fetch, url }) => {
   if (!locals.token) {
     throw error(401, "Unauthorized");
   }
 
   const client = createServerApiClient(locals.token, fetch);
+  const sectionId = url.searchParams.get("sectionId");
 
   try {
     //  SectionResponse[] to match EnrollmentForm's availableSections prop
@@ -19,6 +20,7 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
     return {
       availableSections,
       token: locals.token,
+      sectionId: sectionId ? Number(sectionId) : undefined
     };
   } catch (err: any) {
     console.error("Failed to load sections:", err.message);

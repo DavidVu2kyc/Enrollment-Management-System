@@ -1,17 +1,10 @@
 package com.obu.ems.controller;
 
 import com.obu.ems.dto.*;
-import com.obu.ems.model.*;
-import com.obu.ems.repository.UserRepository;
-import com.obu.ems.repository.StudentRepository;
 import com.obu.ems.service.EnrollmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +22,11 @@ public class EnrollmentController {
                 .body(enrollmentService.enlistStudent(request.getStudentId(), request));
     }
 
+    @PostMapping("/bulk/confirm")
+    public ResponseEntity<List<EnrollmentResponse>> confirmBulk(@RequestBody List<Long> enrollmentIds) {
+        return ResponseEntity.ok(enrollmentService.confirmRegistrationBulk(enrollmentIds));
+    }
+
     @GetMapping("/my/{studentId}")
     public ResponseEntity<List<EnrollmentResponse>> getMyEnrollments(
             @PathVariable Long studentId) {
@@ -37,7 +35,7 @@ public class EnrollmentController {
 
 
     @PutMapping("/{enrollmentId}/registration")
-    public ResponseEntity<EnrollmentResponse> updateEnrollmentRegistration(@PathVariable Long enrollmentId, @PathVariable UpdateEnrollmentRequest request) {
+    public ResponseEntity<EnrollmentResponse> updateEnrollmentRegistration(@PathVariable Long enrollmentId, @Valid @RequestBody UpdateEnrollmentRequest request) {
         //    pending to enrolled status
         return ResponseEntity.ok(enrollmentService.updateRegistration(enrollmentId, request));
     }
@@ -52,7 +50,6 @@ public class EnrollmentController {
     public ResponseEntity<EnrollmentResponse> confirm(@PathVariable Long enrollmentId) {
         return ResponseEntity.ok(enrollmentService.confirmRegistration(enrollmentId));
     }
-
 
     @GetMapping("/{enrollmentId}")
     public ResponseEntity<EnrollmentResponse> getEnrollment(@PathVariable Long enrollmentId) {

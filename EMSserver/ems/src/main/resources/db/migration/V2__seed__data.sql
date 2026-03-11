@@ -1,199 +1,224 @@
--- -- ================================================================
--- -- Orange and Bronze University — Enrollment Management System
--- -- V2__seed_data.sql — 5 Records Per Table
--- -- ================================================================
+-- -- -- ================================================================
+-- -- -- Orange and Bronze University — Enrollment Management System
+-- -- -- V2__seed_data.sql — 15 Records Per Table
+-- -- -- ================================================================
+-- -- -- LOGIN CREDENTIALS:
+-- -- -- Admin  : username='admin',      password='admin123'
+-- -- -- Students: all passwords = 'password123' (same bcrypt hash for dev)
+-- -- -- ================================================================
 
--- -- ================================================================
--- -- LOGIN CREDENTIALS:
--- -- Admin: username = 'admin', password = 'admin123'
--- -- Students: all usernames listed below with password = 'password123'
--- --   - jsmith  (John Smith)
--- --   - mjones  (Mary Jones)
--- --   - rwilliams (Robert Williams)
--- --   - sbrown  (Sarah Brown)
--- --   - adavis  (Alice Davis)
--- -- ================================================================
 
--- -- ================================================================
--- -- Additional Users (keeping the admin from V1)
--- -- All student passwords are 'password123' (bcrypt hashed)
--- -- ================================================================
--- INSERT INTO users (username, password_hash, role) VALUES
---     ('jsmith', '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),
---     ('mjones', '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),
---     ('rwilliams', '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),
---     ('sbrown', '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),
---     ('adavis', '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT');
-
--- -- ================================================================
--- -- Additional Degrees (keeping the two from V1)
--- -- ================================================================
+-- -- -- ================================================================
+-- -- -- DEGREES  (V1 inserted 2 → adding 13 → total 15)
+-- -- -- degree_id 1 = BS Computer Science      (from V1)
+-- -- -- degree_id 2 = BS Information Technology (from V1)
+-- -- -- degree_id 3-15 added here
+-- -- -- ================================================================
 -- INSERT INTO degrees (name, description) VALUES
---     ('Bachelor of Science in Computer Engineering', 'Five-year program combining computer science and electrical engineering.'),
---     ('Bachelor of Science in Data Science', 'Four-year program focused on statistical analysis and machine learning.'),
---     ('Bachelor of Science in Information Systems', 'Four-year program emphasizing business applications and systems analysis.');
+--     ('Bachelor of Science in Computer Engineering',       'Five-year program combining computer science and electrical engineering.'),
+--     ('Bachelor of Science in Data Science',               'Four-year program focused on statistical analysis and machine learning.'),
+--     ('Bachelor of Science in Information Systems',        'Four-year program emphasizing business applications and systems analysis.'),
+--     ('Bachelor of Science in Mathematics',                'Four-year program covering pure and applied mathematics.'),
+--     ('Bachelor of Science in Physics',                    'Four-year program covering classical and modern physics.'),
+--     ('Bachelor of Science in Chemistry',                  'Four-year program in chemical sciences and laboratory methods.'),
+--     ('Bachelor of Science in Biology',                    'Four-year program in life sciences and biological research.'),
+--     ('Bachelor of Science in Psychology',                 'Four-year program studying human behavior and mental processes.'),
+--     ('Bachelor of Science in Economics',                  'Four-year program covering micro and macroeconomic theory.'),
+--     ('Bachelor of Science in Management',                 'Four-year business management and leadership program.'),
+--     ('Bachelor of Science in Accountancy',                'Four-year program preparing students for the CPA licensure exam.'),
+--     ('Bachelor of Science in Civil Engineering',          'Five-year program in structural, geotechnical, and environmental engineering.'),
+--     ('Bachelor of Science in Electrical Engineering',     'Five-year program covering power systems and electronics.');
+-- -- degree_id 3-15
 
--- -- Now we have 5 degrees total (2 from V1 + 3 new)
-
--- -- ================================================================
--- -- Additional Courses (5 per degree)
--- -- ================================================================
--- -- Courses for CS degree (degree_id = 1)
--- INSERT INTO courses (code, title, units, degree_id) VALUES
---     ('CS101', 'Introduction to Programming', 3, 1),
---     ('CS201', 'Data Structures and Algorithms', 4, 1),
---     ('CS301', 'Database Management Systems', 3, 1),
---     ('CS401', 'Software Engineering', 3, 1),
---     ('CS450', 'Artificial Intelligence', 3, 1);
-
--- -- Courses for IT degree (degree_id = 2)
--- INSERT INTO courses (code, title, units, degree_id) VALUES
---     ('IT101', 'Introduction to Information Technology', 3, 2),
---     ('IT201', 'Networking Fundamentals', 4, 2),
---     ('IT301', 'Web Development', 3, 2),
---     ('IT401', 'System Administration', 3, 2),
---     ('IT450', 'Cybersecurity Basics', 3, 2);
-
--- -- Courses for CompEng degree (degree_id = 3)
--- INSERT INTO courses (code, title, units, degree_id) VALUES
---     ('CE101', 'Digital Logic Design', 4, 3),
---     ('CE201', 'Microprocessors', 4, 3),
---     ('CE301', 'Computer Architecture', 3, 3),
---     ('CE401', 'Embedded Systems', 4, 3),
---     ('CE450', 'Robotics', 3, 3);
-
--- -- Courses for Data Science degree (degree_id = 4)
--- INSERT INTO courses (code, title, units, degree_id) VALUES
---     ('DS101', 'Introduction to Data Science', 3, 4),
---     ('DS201', 'Statistical Methods', 4, 4),
---     ('DS301', 'Machine Learning Fundamentals', 4, 4),
---     ('DS401', 'Big Data Analytics', 3, 4),
---     ('DS450', 'Data Visualization', 3, 4);
-
--- -- Courses for IS degree (degree_id = 5)
--- INSERT INTO courses (code, title, units, degree_id) VALUES
---     ('IS101', 'Business Process Fundamentals', 3, 5),
---     ('IS201', 'Systems Analysis and Design', 4, 5),
---     ('IS301', 'Enterprise Architecture', 3, 5),
---     ('IS401', 'IT Project Management', 3, 5),
---     ('IS450', 'Business Intelligence', 3, 5);
-
--- -- ================================================================
--- -- Students (linked to the 5 student users created above)
--- -- ================================================================
--- INSERT INTO students (user_id, first_name, last_name, student_number, degree_id) VALUES
---     (2, 'John', 'Smith', '2024-1001', 1),   -- CS student
---     (3, 'Mary', 'Jones', '2024-1002', 2),   -- IT student
---     (4, 'Robert', 'Williams', '2024-1003', 3), -- CompEng student
---     (5, 'Sarah', 'Brown', '2024-1004', 4),  -- Data Science student
---     (6, 'Alice', 'Davis', '2024-1005', 5);  -- IS student
-
--- -- ================================================================
--- -- Additional Terms
--- -- ================================================================
+-- -- -- ================================================================
+-- -- -- TERMS  (V1 inserted 1 → adding 14 → total 15)
+-- -- -- V1 term: year=2025, semester=FIRST (active, term_id=1)
+-- -- -- Adding years 2021-2025 to fill 14 slots without violating UNIQUE(year,semester)
+-- -- -- ================================================================
 -- INSERT INTO terms (name, year, semester, is_active) VALUES
---     ('AY 2024-2025 First Semester', 2024, 'FIRST', FALSE),
---     ('AY 2024-2025 Second Semester', 2025, 'SECOND', FALSE),
---     ('AY 2024-2025 Summer', 2025, 'SUMMER', FALSE),
---     ('AY 2025-2026 Second Semester', 2026, 'SECOND', FALSE),
---     ('AY 2025-2026 Summer', 2026, 'SUMMER', FALSE);
+--     ('AY 2020-2021 First Semester',  2021, 'FIRST',  FALSE),  -- term_id 2
+--     ('AY 2020-2021 Second Semester', 2021, 'SECOND', FALSE),  -- term_id 3
+--     ('AY 2020-2021 Summer',          2021, 'SUMMER', FALSE),  -- term_id 4
+--     ('AY 2021-2022 First Semester',  2022, 'FIRST',  FALSE),  -- term_id 5
+--     ('AY 2021-2022 Second Semester', 2022, 'SECOND', FALSE),  -- term_id 6
+--     ('AY 2021-2022 Summer',          2022, 'SUMMER', FALSE),  -- term_id 7
+--     ('AY 2022-2023 First Semester',  2023, 'FIRST',  FALSE),  -- term_id 8
+--     ('AY 2022-2023 Second Semester', 2023, 'SECOND', FALSE),  -- term_id 9
+--     ('AY 2022-2023 Summer',          2022, 'SUMMER', FALSE),  -- term_id 10
+--     ('AY 2023-2024 First Semester',  2024, 'FIRST',  FALSE),  -- term_id 11
+--     ('AY 2023-2024 Second Semester', 2024, 'SECOND', FALSE),  -- term_id 12
+--     ('AY 2023-2024 Summer',          2024, 'SUMMER', FALSE),  -- term_id 13
+--     ('AY 2025-2026 Second Semester', 2025, 'SECOND', FALSE),  -- term_id 14 (2025 SECOND)
+--     ('AY 2025-2026 Summer',          2025, 'SUMMER', FALSE);  -- term_id 15
 
--- -- Note: V1 already created 'AY 2025-2026 First Semester' as active term
+-- -- -- ================================================================
+-- -- -- USERS  (V1 inserted 1 admin → adding 15 students → total 16)
+-- -- -- user_id 2-16 → will map to student_id 1-15
+-- -- -- ================================================================
+-- INSERT INTO users (username, password_hash, role) VALUES
+--     ('jsmith',     '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 2
+--     ('mjones',     '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 3
+--     ('rwilliams',  '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 4
+--     ('sbrown',     '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 5
+--     ('adavis',     '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 6
+--     ('cwilson',    '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 7
+--     ('dmoore',     '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 8
+--     ('etaylor',    '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 9
+--     ('fanderson',  '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 10
+--     ('gthomas',    '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 11
+--     ('hjackson',   '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 12
+--     ('iwhite',     '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 13
+--     ('jharris',    '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 14
+--     ('kmartin',    '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT'),  -- user_id 15
+--     ('lthompson',  '$2a$12$w.tz.lGjWKqBP0nKDxNF6eMTwxbLXiAdmh8c.P2VW.FaZdK0dJrWC', 'STUDENT');  -- user_id 16
 
--- -- ================================================================
--- -- Rooms
--- -- ================================================================
+-- -- -- ================================================================
+-- -- -- COURSES  (15 total — 3 per the first 5 degrees)
+-- -- -- ================================================================
+-- INSERT INTO courses (code, title, units, degree_id) VALUES
+--     -- BS Computer Science (degree_id = 1)
+--     ('CS101', 'Introduction to Programming',        3, 1),   -- course_id 1
+--     ('CS201', 'Data Structures and Algorithms',     4, 1),   -- course_id 2
+--     ('CS301', 'Database Management Systems',        3, 1),   -- course_id 3
+--     -- BS Information Technology (degree_id = 2)
+--     ('IT101', 'Introduction to Information Tech',   3, 2),   -- course_id 4
+--     ('IT201', 'Networking Fundamentals',            4, 2),   -- course_id 5
+--     ('IT301', 'Web Development',                    3, 2),   -- course_id 6
+--     -- BS Computer Engineering (degree_id = 3)
+--     ('CE101', 'Digital Logic Design',               4, 3),   -- course_id 7
+--     ('CE201', 'Microprocessors and Interfacing',    4, 3),   -- course_id 8
+--     ('CE301', 'Computer Architecture',              3, 3),   -- course_id 9
+--     -- BS Data Science (degree_id = 4)
+--     ('DS101', 'Introduction to Data Science',       3, 4),   -- course_id 10
+--     ('DS201', 'Statistical Methods',                4, 4),   -- course_id 11
+--     ('DS301', 'Machine Learning Fundamentals',      4, 4),   -- course_id 12
+--     -- BS Information Systems (degree_id = 5)
+--     ('IS101', 'Business Process Fundamentals',      3, 5),   -- course_id 13
+--     ('IS201', 'Systems Analysis and Design',        4, 5),   -- course_id 14
+--     ('IS301', 'Enterprise Architecture',            3, 5);   -- course_id 15
+
+-- -- -- ================================================================
+-- -- -- ROOMS  (15 total)
+-- -- -- ================================================================
 -- INSERT INTO rooms (building, room_number, capacity) VALUES
---     ('Engineering', '101', 50),
---     ('Engineering', '102', 45),
---     ('Science', '201', 60),
---     ('Science', '202', 55),
---     ('Liberal Arts', '301', 40);
+--     ('Engineering Hall', '101', 50),  -- room_id 1
+--     ('Engineering Hall', '102', 45),  -- room_id 2
+--     ('Engineering Hall', '201', 40),  -- room_id 3
+--     ('Science Hall',     '101', 60),  -- room_id 4
+--     ('Science Hall',     '102', 55),  -- room_id 5
+--     ('Science Hall',     '201', 50),  -- room_id 6
+--     ('Liberal Arts',     '101', 40),  -- room_id 7
+--     ('Liberal Arts',     '102', 35),  -- room_id 8
+--     ('Liberal Arts',     '201', 30),  -- room_id 9
+--     ('Business Hall',    '101', 45),  -- room_id 10
+--     ('Business Hall',    '102', 40),  -- room_id 11
+--     ('Business Hall',    '201', 35),  -- room_id 12
+--     ('Math Building',    '101', 50),  -- room_id 13
+--     ('Math Building',    '102', 45),  -- room_id 14
+--     ('Math Building',    '201', 40);  -- room_id 15
 
--- -- ================================================================
--- -- Schedules
--- -- ================================================================
+-- -- -- ================================================================
+-- -- -- SCHEDULES  (15 total — spread across all weekdays)
+-- -- -- ================================================================
 -- INSERT INTO schedules (day_of_week, start_time, end_time) VALUES
---     ('MON', '08:00:00', '10:00:00'),
---     ('TUE', '10:30:00', '12:30:00'),
---     ('WED', '13:00:00', '15:00:00'),
---     ('THU', '08:00:00', '10:00:00'),
---     ('FRI', '15:30:00', '17:30:00');
+--     ('MON', '07:00', '10:00'),   -- schedule_id 1
+--     ('MON', '09:30', '11:30'),   -- schedule_id 2 conflict scheck
+--     ('MON', '13:00', '15:00'),   -- schedule_id 3
+--     ('TUE', '14:00', '16:00'),   -- schedule_id 4 conflict check
+--     ('TUE', '09:30', '11:30'),   -- schedule_id 5 conflict check
+--     ('TUE', '13:00', '15:00'),   -- schedule_id 6
+--     ('WED', '07:00', '09:00'),   -- schedule_id 7
+--     ('WED', '09:30', '11:30'),   -- schedule_id 8
+--     ('WED', '15:00', '17:00'),   -- schedule_id 9
+--     ('THU', '07:00', '09:00'),   -- schedule_id 10
+--     ('THU', '09:30', '11:30'),   -- schedule_id 11
+--     ('THU', '13:00', '15:00'),   -- schedule_id 12
+--     ('FRI', '07:00', '09:00'),   -- schedule_id 13
+--     ('FRI', '09:30', '11:30'),   -- schedule_id 14
+--     ('SAT', '08:00', '11:00');   -- schedule_id 15 (3-hr lab)
 
--- -- ================================================================
--- -- Sections (5 sections for the active term)
--- -- ================================================================
--- -- Using active term from V1 (term_id = 1)
+-- -- -- ================================================================
+-- -- -- STUDENTS  (15 total — linked to user_id 2-16)
+-- -- -- ================================================================
+-- INSERT INTO students (user_id, first_name, last_name, student_number, degree_id) VALUES
+--     (2,  'John',     'Smith',     '2024-1001', 1),  -- student_id 1  → CS
+--     (3,  'Mary',     'Jones',     '2024-1002', 2),  -- student_id 2  → IT
+--     (4,  'Robert',   'Williams',  '2024-1003', 3),  -- student_id 3  → CompEng
+--     (5,  'Sarah',    'Brown',     '2024-1004', 4),  -- student_id 4  → Data Science
+--     (6,  'Alice',    'Davis',     '2024-1005', 5),  -- student_id 5  → IS
+--     (7,  'Charles',  'Wilson',    '2023-1001', 1),  -- student_id 6  → CS
+--     (8,  'Diana',    'Moore',     '2023-1002', 2),  -- student_id 7  → IT
+--     (9,  'Edward',   'Taylor',    '2023-1003', 3),  -- student_id 8  → CompEng
+--     (10, 'Fiona',    'Anderson',  '2023-1004', 4),  -- student_id 9  → Data Science
+--     (11, 'George',   'Thomas',    '2023-1005', 5),  -- student_id 10 → IS
+--     (12, 'Hannah',   'Jackson',   '2022-1001', 1),  -- student_id 11 → CS
+--     (13, 'Ivan',     'White',     '2022-1002', 2),  -- student_id 12 → IT
+--     (14, 'Julia',    'Harris',    '2022-1003', 3),  -- student_id 13 → CompEng
+--     (15, 'Kevin',    'Martin',    '2022-1004', 4),  -- student_id 14 → Data Science
+--     (16, 'Laura',    'Thompson',  '2022-1005', 5);  -- student_id 15 → IS
+
+-- -- -- ================================================================
+-- -- -- SECTIONS  (15 total — all in active term, term_id = 1)
+-- -- -- One section per course (course_id 1-15)
+-- -- -- Rooms and schedules assigned without conflicts
+-- -- -- ================================================================
 -- INSERT INTO sections (section_code, course_id, term_id, room_id, schedule_id, faculty_name, max_seats, enrolled_count) VALUES
---     ('CS101-A', 1, 1, 1, 1, 'Dr. Johnson', 35, 0),   -- CS101 section
---     ('IT101-A', 6, 1, 2, 2, 'Prof. Martinez', 30, 0), -- IT101 section
---     ('CE101-A', 11, 1, 3, 3, 'Dr. Chen', 25, 0),     -- CE101 section
---     ('DS101-A', 16, 1, 4, 4, 'Prof. Wilson', 30, 0), -- DS101 section
---     ('IS101-A', 21, 1, 5, 5, 'Dr. Taylor', 40, 0);   -- IS101 section
+--     ('CS101-A', 1,  1, 1,  1,  'Dr. Johnson',     35, 0),  -- section_id 1
+--     ('CS201-A', 2,  1, 2,  2,  'Dr. Johnson',     30, 0),  -- section_id 2
+--     ('CS301-A', 3,  1, 3,  3,  'Prof. Lee',       30, 0),  -- section_id 3
+--     ('IT101-A', 4,  1, 4,  4,  'Prof. Martinez',  35, 0),  -- section_id 4
+--     ('IT201-A', 5,  1, 5,  5,  'Prof. Martinez',  30, 0),  -- section_id 5
+--     ('IT301-A', 6,  1, 6,  6,  'Dr. Nguyen',      30, 0),  -- section_id 6
+--     ('CE101-A', 7,  1, 7,  7,  'Dr. Chen',        25, 0),  -- section_id 7
+--     ('CE201-A', 8,  1, 8,  8,  'Dr. Chen',        25, 0),  -- section_id 8
+--     ('CE301-A', 9,  1, 9,  9,  'Prof. Reyes',     25, 0),  -- section_id 9
+--     ('DS101-A', 10, 1, 10, 10, 'Prof. Wilson',    30, 0),  -- section_id 10
+--     ('DS201-A', 11, 1, 11, 11, 'Prof. Wilson',    30, 0),  -- section_id 11
+--     ('DS301-A', 12, 1, 12, 12, 'Dr. Patel',       25, 0),  -- section_id 12
+--     ('IS101-A', 13, 1, 13, 13, 'Dr. Taylor',      35, 0),  -- section_id 13
+--     ('IS201-A', 14, 1, 14, 14, 'Dr. Taylor',      30, 0),  -- section_id 14
+--     ('IS301-A', 15, 1, 15, 15, 'Prof. Garcia',    25, 0);  -- section_id 15
 
--- -- ================================================================
--- -- Enrollments (mix of PENDING and ENROLLED)
--- -- ================================================================
+-- -- -- ================================================================
+-- -- -- ENROLLMENTS  (15 total — varied statuses across students)
+-- -- -- Each student enrolls in their degree's intro section + one elective
+-- -- -- ================================================================
 -- INSERT INTO enrollments (student_id, section_id, status, enrolled_at) VALUES
---     -- Student 1 (John Smith) enrollments
---     (1, 1, 'ENROLLED', NOW() - INTERVAL '5 days'),
---     (1, 2, 'ENROLLED', NOW() - INTERVAL '5 days'),
---     (1, 3, 'PENDING', NOW() - INTERVAL '2 days'),
-    
---     -- Student 2 (Mary Jones) enrollments
---     (2, 2, 'ENROLLED', NOW() - INTERVAL '4 days'),
---     (2, 4, 'PENDING', NOW() - INTERVAL '1 day'),
-    
---     -- Student 3 (Robert Williams) enrollments
---     (3, 3, 'ENROLLED', NOW() - INTERVAL '3 days'),
---     (3, 5, 'ENROLLED', NOW() - INTERVAL '3 days'),
-    
---     -- Student 4 (Sarah Brown) enrollments
---     (4, 4, 'ENROLLED', NOW() - INTERVAL '2 days'),
---     (4, 1, 'DROPPED', NOW() - INTERVAL '10 days'),
-    
---     -- Student 5 (Alice Davis) enrollments
---     (5, 5, 'ENROLLED', NOW() - INTERVAL '1 day'),
---     (5, 2, 'PENDING', NOW());
+--     (1,  1,  'ENROLLED', NOW() - INTERVAL '10 days'),  -- John    → CS101-A
+--     (2,  4,  'ENROLLED', NOW() - INTERVAL '10 days'),  -- Mary    → IT101-A
+--     (3,  7,  'ENROLLED', NOW() - INTERVAL '9 days'),   -- Robert  → CE101-A
+--     (4,  10, 'ENROLLED', NOW() - INTERVAL '9 days'),   -- Sarah   → DS101-A
+--     (5,  13, 'ENROLLED', NOW() - INTERVAL '8 days'),   -- Alice   → IS101-A
+--     (6,  2,  'ENROLLED', NOW() - INTERVAL '8 days'),   -- Charles → CS201-A
+--     (7,  5,  'ENROLLED', NOW() - INTERVAL '7 days'),   -- Diana   → IT201-A
+--     (8,  8,  'ENROLLED', NOW() - INTERVAL '7 days'),   -- Edward  → CE201-A
+--     (9,  11, 'ENROLLED', NOW() - INTERVAL '6 days'),   -- Fiona   → DS201-A
+--     (10, 14, 'ENROLLED', NOW() - INTERVAL '6 days'),   -- George  → IS201-A
+--     (11, 3,  'PENDING',  NOW() - INTERVAL '3 days'),   -- Hannah  → CS301-A (pending)
+--     (12, 6,  'PENDING',  NOW() - INTERVAL '2 days'),   -- Ivan    → IT301-A (pending)
+--     (13, 9,  'PENDING',  NOW() - INTERVAL '2 days'),   -- Julia   → CE301-A (pending)
+--     (14, 12, 'DROPPED',  NOW() - INTERVAL '5 days'),   -- Kevin   → DS301-A (dropped)
+--     (15, 15, 'DROPPED',  NOW() - INTERVAL '5 days');   -- Laura   → IS301-A (dropped)
 
--- -- Update enrolled_count in sections based on ENROLLED status
--- UPDATE sections 
+-- -- Sync enrolled_count to actual ENROLLED rows
+-- UPDATE sections
 -- SET enrolled_count = (
---     SELECT COUNT(*) 
---     FROM enrollments 
---     WHERE enrollments.section_id = sections.section_id 
---     AND status = 'ENROLLED'
+--     SELECT COUNT(*)
+--     FROM enrollments
+--     WHERE enrollments.section_id = sections.section_id
+--       AND status = 'ENROLLED'
 -- );
 
--- -- ================================================================
--- -- Verification Queries (commented out - for manual checking)
--- -- ================================================================
--- /*
--- -- Check record counts
--- SELECT 'users' as table_name, COUNT(*) FROM users UNION ALL
--- SELECT 'degrees', COUNT(*) FROM degrees UNION ALL
--- SELECT 'courses', COUNT(*) FROM courses UNION ALL
--- SELECT 'students', COUNT(*) FROM students UNION ALL
--- SELECT 'terms', COUNT(*) FROM terms UNION ALL
--- SELECT 'rooms', COUNT(*) FROM rooms UNION ALL
--- SELECT 'schedules', COUNT(*) FROM schedules UNION ALL
--- SELECT 'sections', COUNT(*) FROM sections UNION ALL
--- SELECT 'enrollments', COUNT(*) FROM enrollments;
-
--- -- Show enrollments with details
--- SELECT 
---     s.first_name || ' ' || s.last_name as student_name,
---     c.code as course_code,
---     e.status,
---     e.enrolled_at
--- FROM enrollments e
--- JOIN students s ON e.student_id = s.student_id
--- JOIN sections sec ON e.section_id = sec.section_id
--- JOIN courses c ON sec.course_id = c.course_id
--- ORDER BY e.enrolled_at DESC;
-
--- -- Show all users with their roles
--- SELECT username, role FROM users;
--- */
-
-
+-- -- -- ================================================================
+-- -- -- Verification Queries
+-- -- -- ================================================================
+-- SELECT 'users'       AS table_name, COUNT(*) AS total FROM users        UNION ALL
+-- SELECT 'degrees',                   COUNT(*)           FROM degrees      UNION ALL
+-- SELECT 'courses',                   COUNT(*)           FROM courses      UNION ALL
+-- SELECT 'students',                  COUNT(*)           FROM students     UNION ALL
+-- SELECT 'terms',                     COUNT(*)           FROM terms        UNION ALL
+-- SELECT 'rooms',                     COUNT(*)           FROM rooms        UNION ALL
+-- SELECT 'schedules',                 COUNT(*)           FROM schedules    UNION ALL
+-- SELECT 'sections',                  COUNT(*)           FROM sections     UNION ALL
+-- SELECT 'enrollments',               COUNT(*)           FROM enrollments
+-- ORDER BY table_name;

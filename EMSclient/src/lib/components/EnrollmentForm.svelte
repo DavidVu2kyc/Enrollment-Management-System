@@ -72,8 +72,9 @@
   // Sync form when enrollment prop changes (SSR data arrives after mount)
   $effect(() => {
     if (enrollment) {
-      $form.sectionId = enrollment.section.sectionId;
-      $form.status = enrollment.status as Status;
+      const sid = (enrollment as any)?.section?.sectionId ?? (enrollment as any)?.sectionId;
+      if (sid) $form.sectionId = sid;
+      if (enrollment.status) $form.status = enrollment.status as Status;
     }
   });
 
