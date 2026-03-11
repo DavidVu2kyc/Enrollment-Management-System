@@ -18,9 +18,9 @@ export const actions = {
     const formData = await request.formData();
     const token = locals.token ?? "";
     const enrollmentId = formData.get("enrollmentId");
-    const status = formData.get("status");
+    // const status = formData.get("status");
 
-    if (!enrollmentId || !status) {
+    if (!enrollmentId) {
       return fail(400, { message: "Enrollment ID and status are required" });
     }
 
@@ -29,7 +29,7 @@ export const actions = {
       // update request confirmation
       // update and confirm registration 
       const result = await client.put<EnrollmentResponse>(
-        `/enrollments/${enrollmentId}/apply`, // ← was /status, now /apply
+        `/enrollments/${enrollmentId}/confirm`, // ← was /status, now /apply
         // { status },
       );
       return { success: true, enrollment: result };

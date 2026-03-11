@@ -33,7 +33,7 @@ export class ApiClient {
         `Bearer ${this.jwt}`;
     }
 
-    debugger
+    // debugger
     const response = await this.fetchFn(url, {
       ...options,
       headers,

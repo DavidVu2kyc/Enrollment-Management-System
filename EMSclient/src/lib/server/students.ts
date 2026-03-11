@@ -8,7 +8,7 @@ export async function getProfile(
   token: string | null,
   fetch: typeof globalThis.fetch,
 ): Promise<StudentResponse> {
-  debugger
+  // debugger
   const client = createServerApiClient(token, fetch);
   return client.get<StudentResponse>("/students/profile");
 }
@@ -22,7 +22,7 @@ export async function updateProfile(
   token: string | null,  // Changed to accept null
   fetch: typeof globalThis.fetch,
 ): Promise<{ success: boolean }> {
-  debugger;
+  // debugger;
   const client = createServerApiClient(token, fetch);
   console.log("TOKEN:", token);
 

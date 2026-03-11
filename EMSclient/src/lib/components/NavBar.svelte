@@ -8,7 +8,7 @@
   async function handleLogout() {
     console.log("Logout function called");
     try {
-      debugger
+      // debugger
       const res = await logout(fetch);
       console.log("Logout response: " + res); 
       

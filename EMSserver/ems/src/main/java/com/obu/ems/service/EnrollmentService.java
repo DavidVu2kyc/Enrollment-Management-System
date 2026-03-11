@@ -56,6 +56,7 @@ public class EnrollmentService {
 
         // Check if already enrolled
         Optional<Enrollment> existingEnrollment = enrollmentRepository.findByStudent_StudentIdAndSection_SectionId(studentId, enrollmentRequest.getSectionId());
+
         if (existingEnrollment.isPresent()) {
             throw new ConflictException("Student is already enrolled in this section.");
         }
@@ -163,9 +164,10 @@ public class EnrollmentService {
 
     @Transactional
     public EnrollmentResponse confirmRegistration(Long enrollmentId) {
-
+        //   verify enrollment existing
         Enrollment enroll = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+
 
         if (enroll.getStatus() != Enrollment.Status.PENDING) {
             throw new IllegalStateException("Only pending enrollments can be confirmed.");
@@ -194,17 +196,11 @@ public class EnrollmentService {
             throw new AccessDeniedException("Students can only drop their own enrollments.");
         }
 
-        // Route logic based on Admin role
-        if (isAdmin) {
-            // hard delete
-            enrollmentRepository.delete(enroll);
-            return EnrollmentResponse.builder().message("Enrollment permanently removed (Hard Delete).").build();
-        } else {
-            // soft delete
-            enroll.setStatus(Enrollment.Status.DROPPED);
-            enrollmentRepository.save(enroll);
-            return EnrollmentResponse.builder().message("Soft delete successfully").build();
-        }
+        // Set status to DROPPED
+        enroll.setStatus(Enrollment.Status.DROPPED);
+        enrollmentRepository.save(enroll);
+        return EnrollmentResponse.builder().message("Soft delete successfully").build();
+
     }
 
 }

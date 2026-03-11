@@ -46,6 +46,7 @@ public class SectionService {
         return sectionMapper.mapToSectionResponse(section);
     }
 
+    @Transactional
     // A list of students enrolled in a section - admin permission only
     public List<EnrollmentResponse> getEnrollmentsBySection(Long sectionId) {
         // admin permission check

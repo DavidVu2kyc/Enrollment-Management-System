@@ -3,6 +3,7 @@ package com.obu.ems.integration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,17 +25,11 @@ public abstract class   BaseIntegrationTest {
     private MockMvc mockMvc;
 
     @Container
-    protected static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("postgres")
+    @ServiceConnection
+    protected static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("testdb")
             .withUsername("postgres")
             .withPassword("mysecretpassword");
-
-    static {
-            // Add this before any Testcontainer initialization
-        // System.setProperty("docker.host", "unix:///Users/David/.docker/run/docker.sock");
-        // System.setProperty("DOCKER_HOST", "unix:///Users/David/.docker/run/docker.sock");
-        postgres.start();
-    }
 
     // connecting spirngboot and container
     @DynamicPropertySource

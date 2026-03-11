@@ -26,7 +26,7 @@
   });
 
   let dashboardStats = $state({
-    enrolledUnits: 10,
+    enrolledUnits: 0,
     activeCourses: 0,
     enrollmentPhase: "Enlistment Open",
     capacityStatus: 85,
@@ -55,7 +55,7 @@
   // Client side data fetching
   onMount(async () => {
     try {
-      debugger;
+      // debugger;
       if (data?.token) {
         apiClient.setAccessToken(data.token);
       }
@@ -67,7 +67,7 @@
 
       if (studentId) {
         // 2. Fetch enrollments first
-        debugger;
+        // debugger;
         const enrollments = await apiClient.get<EnrollmentResponse[]>(
           `/enrollments/my/${studentId}`,
         );
@@ -75,10 +75,10 @@
 
         dashboardStats.activeCourses = enrollments.length;
         // Calculate units safely based on available credits or units fields
-        debugger;
+        // debugger;
         dashboardStats.enrolledUnits = enrollments.reduce(
           (acc: number, curr: any) =>
-            acc + (curr.section?.course?.credits || curr.units || 0),
+            acc + (curr.section?.course?.units || curr.units || 0),
           0,
         );
       }
@@ -88,6 +88,23 @@
       isLoading = false;
     }
   });
+
+
+  // 1.  GET CAPACITY STATUS
+  if (enrollmentsStore.all.length > 0) {
+  const totalCapacity = enrollmentsStore.all.reduce(
+    (acc: number, curr: any) => acc + (curr.section?.capacity ?? 0), 0
+  );
+  console.log(totalCapacity);
+  const totalEnrolled = enrollmentsStore.all.reduce(
+    (acc: number, curr: any) => acc + (curr.section?.enrolledCount ?? 0), 0
+  );
+  console.log(totalEnrolled);
+  
+  dashboardStats.capacityStatus = totalCapacity > 0
+    ? Math.round((totalEnrolled / totalCapacity) * 100)
+    : 0;
+}
 
   // 2.  SHARED ACTION HELPER
 
@@ -102,15 +119,6 @@
     return deserialize(await res.text());
   }
 
-  // confirm registration
-  //  EnrollmentRecord "Confirm Registration" button
-  //    → onEnroll(enrollmentId)                  [EnrollmentRecord]
-  //      → onEnrollCourse(enrollmentId)           [EnrollmentList passthrough]
-  //        → handleEnrollCourse(enrollmentId)     [here]
-  //          → optimistic store.update()
-  //          → submitAction("update")             [+page.server.ts: actions.update]
-  //            ✓ success  → store already correct, nothing extra needed
-  //            ✗ failure  → roll back store.update() + show error banner
   const handleEnrollCourse = async (enrollmentId: number) => {
     actionError = null;
 
@@ -118,28 +126,16 @@
     enrollmentsStore.update(enrollmentId, { status: "ENROLLED" }); // optimistic
 
     const result = await submitAction("update", {
-      enrollmentId,  // status removed, backend doesn't need it
+      enrollmentId, // status removed, backend doesn't need it
     });
 
     if (result.type === "failure") {
-      // Roll back
-      enrollmentsStore.update(enrollmentId, { status: "PENDING" });  // rollback
+      // Roll back 
+      enrollmentsStore.update(enrollmentId, { status: "PENDING" }); // rollback
       actionError =
         (result.data as any)?.message ?? "Failed to confirm enrollment";
     }
-    // On success the server returned the updated record, but our
-    // optimistic update already matches it — no extra work needed.
   };
-
-  // drop enrollment
-  //  EnrollmentRecord "Drop" button
-  //    → onDelete(enrollmentId)                 [EnrollmentRecord]
-  //      → onDeleteCourse(enrollmentId)         [EnrollmentList passthrough]
-  //        → handleDropCourse(enrollmentId)     [here]
-  //          → optimistic store.remove()
-  //          → submitAction("delete")           [+page.server.ts: actions.delete]
-  //            ✓ success  → store already correct, nothing extra needed
-  //            ✗ failure  → roll back store.update() + show error banner
 
   const handleDeleteEnrollment = async (enrollmentId: number) => {
     actionError = null;
@@ -150,8 +146,8 @@
     );
     if (!enrollment) return;
 
-    // Optimistic: remove card immediately
-    enrollmentsStore.remove(enrollmentId);
+    // Optimistic: flip to "DROPPED" immediately
+    enrollmentsStore.update(enrollmentId, { status: "DROPPED" });
 
     const result = await submitAction("delete", {
       enrollmentId,
@@ -167,13 +163,6 @@
     }
   };
 
-  // view or edit details
-  //  EnrollmentRecord course title click
-  //    → onShow(enrollmentId)                    [EnrollmentRecord]
-  //      → onShowEnrollment(enrollmentId)         [EnrollmentList passthrough]
-  //        → handleShowEnrollment(enrollmentId)   [here]
-  //          → goto(`/enrollments/[id]`)
-
   const handleShowEnrollment = (enrollmentId: number) => {
     goto(`/enrollments/${enrollmentId}`);
   };
@@ -181,7 +170,7 @@
   // derived state
   const cards = $derived([
     {
-      // label: "Academic Load",
+      label: "Academic Load",
       value: `${dashboardStats.enrolledUnits}`,
       unit: "Units",
       icon: "M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0118 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25",
@@ -365,7 +354,7 @@
             {/each}
           </div>
         {:else}
-        <!-- parent component   -->
+          <!-- parent component   -->
           <EnrollmentList
             {isLoading}
             onDeleteEnrollment={handleDeleteEnrollment}
