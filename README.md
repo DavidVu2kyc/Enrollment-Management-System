@@ -38,46 +38,7 @@ The **Orange and Bronze University Enrollment Management System** is a full-stac
 2. **Capacity Management:** Sections have a hard limit; once reached, enrollment is blocked.
 3. **Degree Tracking:** A Degree consists of specific Courses; students must complete these to graduate.
 4. **EAF (Enrollment Assessment Form):** The final output containing the student's validated schedule.
-
 ---
-
-## 📂 Suggested File Structure
-
-### **SvelteKit Frontend**
-
-```text
-src/
- ├── lib/
- │    ├── components/         # EnrollmentRecord.svelte, EnrollmentForm.svelte, Modal.svelte
- │    ├── stores/             # tasks.ts (State management)
- │    └── schemas/            # Yup validation schemas
- ├── routes/
- │    ├── +layout.svelte      # Main Layout & Navigation
- │    ├── +layout.server.ts   # SSR Auth check
- │    ├── +page.svelte        # Homepage (Enrollment List)
- │    ├── enrollments/        # Student Enlistment View
- │    └── api/                # Internal API proxies (+server.ts)
-
-```
-
-### **Spring Boot Backend**
-
-```text
-src/
- ├── main/
- │    ├── java/com/obu/ems/
- │    │    ├── controller/    # Generated from OpenAPI
- │    │    ├── service/       # Business logic (Conflict checks)
- │    │    ├── repository/    # Spring Data JPA
- │    │    └── model/         # JPA Entities
- │    └── resources/
- │         ├── db/migration/  # Flyway SQL Scripts (V1__init.sql)
- │         └── api-spec.yaml  # OpenAPI Specification
-
-```
-
----
-
 ## 🚀 Key Features to Implement
 
 | Feature | Description |
