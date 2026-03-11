@@ -69,14 +69,25 @@ public class EnrollmentIntegrationTest extends BaseIntegrationTest {
                 student = studentRepository.save(student);
                 studentId = student.getStudentId();
 
-                Term term = termRepository.save(Term.builder().name("Fall 2026").build());
-                Course course = courseRepository.save(Course.builder().code("CS101").title("Intro to CS").build());
+                Term term = termRepository.save(Term.builder()
+                                .name("Fall 2026")
+                                .year(2026)
+                                .semester(Term.Semester.FIRST)
+                                .isActive(true)
+                                .build());
+                Course course = courseRepository.save(Course.builder()
+                                .code("CS101")
+                                .title("Intro to CS")
+                                .units(3)
+                                .degree(degree)
+                                .build());
 
                 Section section = Section.builder()
                                 .sectionCode("CS101-A")
                                 .term(term)
                                 .course(course)
                                 .maxSeats(30)
+                                .enrolledCount(0)
                                 .build();
                 section = sectionRepository.save(section);
                 sectionId = section.getSectionId();
@@ -242,5 +253,84 @@ public class EnrollmentIntegrationTest extends BaseIntegrationTest {
                 // Verify it's dropped (soft delete)
                 Enrollment updatedEnrollment = enrollmentRepository.findById(enrollmentId).orElseThrow();
                 assertEquals(Enrollment.Status.DROPPED, updatedEnrollment.getStatus());
+        }
+
+        @Test
+        void testSuccessfulBulkEnrollment() throws Exception {
+                // Create another section
+                Term term = termRepository.findAll().get(0);
+                Course course2 = courseRepository.save(Course.builder()
+                                .code("CS102")
+                                .title("Data Structures")
+                                .units(3)
+                                .degree(degreeRepository.findAll().get(0))
+                                .build());
+                Section section2 = sectionRepository.save(Section.builder()
+                                .sectionCode("CS102-A")
+                                .term(term)
+                                .course(course2)
+                                .maxSeats(30)
+                                .enrolledCount(0)
+                                .build());
+
+                EnrollmentRequest request = new EnrollmentRequest();
+                request.setSectionIds(java.util.List.of(sectionId, section2.getSectionId()));
+                request.setStudentId(studentId);
+
+                getMockMvc().perform(post("/api/enrollments")
+                                .headers(authenticatedHeaders(studentUsername))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.message", containsString("Successfully enrolled in 2 sections")));
+
+                // Verify both enrollments exist
+                assertEquals(2, enrollmentRepository.findByStudent_StudentId(studentId).size());
+        }
+
+        @Test
+        void testBulkEnrollmentScheduleConflict() throws Exception {
+                // Create a conflicting section (same day, overlapping time)
+                Schedule schedule1 = Schedule.builder()
+                                .dayOfWeek(Schedule.DayOfWeek.MON)
+                                .startTime(java.time.LocalTime.of(9, 0))
+                                .endTime(java.time.LocalTime.of(10, 30))
+                                .build();
+                
+                Section s1 = sectionRepository.findById(sectionId).get();
+                s1.setSchedule(schedule1);
+                sectionRepository.save(s1);
+
+                Schedule schedule2 = Schedule.builder()
+                                .dayOfWeek(Schedule.DayOfWeek.MON)
+                                .startTime(java.time.LocalTime.of(10, 0))
+                                .endTime(java.time.LocalTime.of(11, 30))
+                                .build();
+                
+                Course c2 = courseRepository.save(Course.builder()
+                                .code("CS102")
+                                .title("Conflict")
+                                .units(3)
+                                .degree(degreeRepository.findAll().get(0))
+                                .build());
+                Section s2 = sectionRepository.save(Section.builder()
+                                .sectionCode("CS102-A")
+                                .term(termRepository.findAll().get(0))
+                                .course(c2)
+                                .schedule(schedule2)
+                                .maxSeats(30)
+                                .enrolledCount(0)
+                                .build());
+
+                EnrollmentRequest request = new EnrollmentRequest();
+                request.setSectionIds(java.util.List.of(sectionId, s2.getSectionId()));
+                request.setStudentId(studentId);
+
+                getMockMvc().perform(post("/api/enrollments")
+                                .headers(authenticatedHeaders(studentUsername))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isConflict())
+                                .andExpect(jsonPath("$.message", containsString("Internal schedule conflict")));
         }
 }

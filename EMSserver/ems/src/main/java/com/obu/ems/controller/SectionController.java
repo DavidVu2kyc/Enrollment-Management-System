@@ -19,7 +19,7 @@ public class SectionController {
     private static final Logger logger = LoggerFactory.getLogger(SectionController.class);
     private final SectionService sectionService;
 
-    // list all sections
+    // list all sections- browse a list of section available
     @GetMapping
     public ResponseEntity<List<SectionResponse>> getAllSections() {
         logger.info("Request received: Get all sections");
@@ -29,6 +29,12 @@ public class SectionController {
         logger.info("Returning {} sections", sections.size());
 
         return ResponseEntity.ok(sections);
+    }
+
+    @GetMapping("/bulk")
+    public ResponseEntity<List<SectionResponse>> getSectionsBulk(@RequestParam List<Long> ids) {
+        logger.info("Request received: Get sections bulk for ids {}", ids);
+        return ResponseEntity.ok(sectionService.getByIds(ids));
     }
 
     // get section details by sectionId -view section details

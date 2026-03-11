@@ -130,6 +130,7 @@
         onSubmit={handleEnroll}
         {isLoading}
         mode="new"
+        enrollment={data.sectionId ? ({ sectionId: data.sectionId } as any) : null}
       />
     </div>
   </div>

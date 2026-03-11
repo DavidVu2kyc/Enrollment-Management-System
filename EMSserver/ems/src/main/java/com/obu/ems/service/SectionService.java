@@ -36,6 +36,14 @@ public class SectionService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<SectionResponse> getByIds(List<Long> ids) {
+        List<Section> sections = sectionRepository.findAllById(ids);
+        return sections.stream()
+                .map(sectionMapper::mapToSectionResponse)
+                .toList();
+    }
+
     // get section details
     @Transactional(readOnly = true)
     public SectionResponse getById(Long sectionId) {
