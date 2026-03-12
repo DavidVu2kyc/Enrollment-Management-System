@@ -26,6 +26,8 @@ import com.obu.ems.repository.EnrollmentRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +45,7 @@ public class EnrollmentService {
     @Transactional
     public EnrollmentResponse enlistStudent(Long studentId, EnrollmentRequest enrollmentRequest) {
         Student student;
-        
+
         // Resolve student: 1. From path, 2. From body, 3. From security context
         if (studentId != null) {
             student = studentRepository.findById(studentId)
@@ -75,7 +77,8 @@ public class EnrollmentService {
         }
 
         // Check if already enrolled in this specific section
-        Optional<Enrollment> existingEnrollment = enrollmentRepository.findByStudent_StudentIdAndSection_SectionId(student.getStudentId(), enrollmentRequest.getSectionId());
+        Optional<Enrollment> existingEnrollment = enrollmentRepository
+                .findByStudent_StudentIdAndSection_SectionId(student.getStudentId(), enrollmentRequest.getSectionId());
         if (existingEnrollment.isPresent()) {
             throw new ConflictException("Student is already enrolled in this exact section.");
         }
@@ -96,11 +99,11 @@ public class EnrollmentService {
         if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
             throw new AccessDeniedException("User must be authenticated to perform this action.");
         }
-        
+
         String username = auth.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
-                
+
         return studentRepository.findByUser_UserId(user.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for user: " + username));
     }
@@ -117,7 +120,7 @@ public class EnrollmentService {
         }
 
         List<Section> sections = sectionRepository.findAllById(cleanIds);
-        
+
         if (sections.size() != cleanIds.size()) {
             throw new ResourceNotFoundException("One or more sections not found.");
         }
@@ -127,9 +130,10 @@ public class EnrollmentService {
             for (int j = i + 1; j < sections.size(); j++) {
                 Section s1 = sections.get(i);
                 Section s2 = sections.get(j);
-                if (s1.getSchedule() != null && s2.getSchedule() != null && s1.getSchedule().conflictsWith(s2.getSchedule())) {
-                    throw new ConflictException(String.format("Internal schedule conflict: '%s' overlaps with '%s'", 
-                        s1.getSectionCode(), s2.getSectionCode()));
+                if (s1.getSchedule() != null && s2.getSchedule() != null
+                        && s1.getSchedule().conflictsWith(s2.getSchedule())) {
+                    throw new ConflictException(String.format("Internal schedule conflict: '%s' overlaps with '%s'",
+                            s1.getSectionCode(), s2.getSectionCode()));
                 }
             }
         }
@@ -140,9 +144,10 @@ public class EnrollmentService {
             if (validationError != null) {
                 throw new ConflictException(validationError);
             }
-            
+
             // Check if already enrolled
-            Optional<Enrollment> existing = enrollmentRepository.findByStudent_StudentIdAndSection_SectionId(student.getStudentId(), section.getSectionId());
+            Optional<Enrollment> existing = enrollmentRepository
+                    .findByStudent_StudentIdAndSection_SectionId(student.getStudentId(), section.getSectionId());
             if (existing.isPresent()) {
                 throw new ConflictException("Student is already enrolled in section: " + section.getSectionCode());
             }
@@ -166,7 +171,8 @@ public class EnrollmentService {
 
     @Transactional
     public EnrollmentResponse getEnrollment(Long enrollmentId) {
-        Enrollment enrollment = enrollmentRepository.findById(enrollmentId).orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
         return enrollmentMapper.mapToEnrollmentResponse(enrollment);
     }
 
@@ -186,11 +192,13 @@ public class EnrollmentService {
     @PreAuthorize("hasRole('ADMIN') or @enrollmentSecurity.isOwner(#enrollmentId, authentication.name)")
     public EnrollmentResponse updateStatus(Long enrollmentId, UpdateEnrollmentRequest request) {
 
-        Enrollment enroll = enrollmentRepository.findById(enrollmentId).orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+        Enrollment enroll = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
 
         if (request.getSectionId() != null) {
-            Section section = sectionRepository.findById(request.getSectionId()).orElseThrow(() -> new ResourceNotFoundException("Section not found"));
-            
+            Section section = sectionRepository.findById(request.getSectionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+
             // Check for conflicts and capacity
             String validationError = validateEnrollment(enroll.getStudent(), section);
             if (validationError != null) {
@@ -208,7 +216,7 @@ public class EnrollmentService {
         return enrollmentMapper.mapToEnrollmentResponse(enroll);
     }
 
-    //  confirm registration-apply changes
+    // confirm registration-apply changes
     @Transactional
     public EnrollmentResponse updateRegistration(Long enrollmentId, UpdateEnrollmentRequest request) {
 
@@ -242,10 +250,12 @@ public class EnrollmentService {
 
     @Transactional
     public EnrollmentResponse confirmChanges(Long enrollmentId, UpdateEnrollmentRequest request) {
-        Enrollment enroll = enrollmentRepository.findById(enrollmentId).orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+        Enrollment enroll = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
 
         if (request.getSectionId() != null) {
-            Section section = sectionRepository.findById(request.getSectionId()).orElseThrow(() -> new ResourceNotFoundException("Section not found"));
+            Section section = sectionRepository.findById(request.getSectionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
             enroll.setSection(section);
         }
 
@@ -257,13 +267,11 @@ public class EnrollmentService {
         return enrollmentMapper.mapToEnrollmentResponse(enroll);
     }
 
-
     @Transactional
     public EnrollmentResponse confirmRegistration(Long enrollmentId) {
-        //   verify enrollment existing
+        // verify enrollment existing
         Enrollment enroll = enrollmentRepository.findById(enrollmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
-
 
         if (enroll.getStatus() != Enrollment.Status.PENDING) {
             throw new IllegalStateException("Only pending enrollments can be confirmed.");
@@ -277,35 +285,77 @@ public class EnrollmentService {
     }
 
     @Transactional
-    public List<EnrollmentResponse> confirmRegistrationBulk(List<Long> enrollmentIds) {
-        if (enrollmentIds == null || enrollmentIds.isEmpty()) {
-            throw new BadRequestException("Enrollment IDs must be provided.");
-        }
+    public List<EnrollmentResponse> confirmRegistrationBulk(Long studentId, List<Long> sectionIds) {
 
-        List<Enrollment> enrollments = enrollmentRepository.findAllById(enrollmentIds);
-        
-        if (enrollments.size() != enrollmentIds.size()) {
-            throw new ResourceNotFoundException("One or more enrollments not found.");
-        }
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentId));
 
-        for (Enrollment enroll : enrollments) {
-            if (enroll.getStatus() != Enrollment.Status.PENDING) {
-                throw new IllegalStateException("Only pending enrollments can be confirmed: " + enroll.getEnrollmentId());
+        List<EnrollmentResponse> results = new ArrayList<>();
+
+        for (Long sectionId : sectionIds) {
+            Section section = sectionRepository.findById(sectionId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Section not found: " + sectionId));
+
+            // Check if already enrolled
+            if (enrollmentRepository.existsByStudent_StudentIdAndSection_SectionId(student.getStudentId(), section.getSectionId()))
+            {
+                throw new ConflictException("Already enrolled in section: " + sectionId);
             }
-            enroll.setStatus(Enrollment.Status.ENROLLED);
+
+            // Check seat availability
+            if (section.getAvailableSeats() <= 0) {
+                throw new ConflictException("Section is full: " + section.getSectionCode());
+            }
+
+            // Check schedule conflict with already confirmed enrollments
+            List<Enrollment> existing = enrollmentRepository
+                    .findByStudent_StudentIdAndStatus(student.getStudentId(), Enrollment.Status.ENROLLED);
+
+            for (Enrollment e : existing) {
+                if (hasScheduleConflict(e.getSection(), section)) {
+                    throw new ConflictException(
+                            "Schedule conflict between " + e.getSection().getSectionCode() +
+                                    " and " + section.getSectionCode()
+                    );
+                }
+            }
+
+            // Create and save enrollment
+            Enrollment enrollment = Enrollment.builder()
+                    .student(student)
+                    .section(section)
+                    .status(Enrollment.Status.ENROLLED)
+                    .build();
+
+            section.setEnrolledCount(section.getEnrolledCount() + 1);
+            sectionRepository.save(section);
+
+            results.add(enrollmentMapper.mapToEnrollmentResponse(enrollmentRepository.save(enrollment)));
         }
 
-        return enrollmentRepository.saveAll(enrollments).stream()
-                .map(enrollmentMapper::mapToEnrollmentResponse)
-                .toList();
+        return results;
     }
 
+    private boolean hasScheduleConflict(Section s1, Section s2) {
+        if (s1.getSchedule() == null || s2.getSchedule() == null)
+            return false;
+        if (!s1.getSchedule().getDayOfWeek().equals(s2.getSchedule().getDayOfWeek()))
+            return false;
+
+        LocalTime start1 = s1.getSchedule().getStartTime();
+        LocalTime end1 = s1.getSchedule().getEndTime();
+        LocalTime start2 = s2.getSchedule().getStartTime();
+        LocalTime end2 = s2.getSchedule().getEndTime();
+
+        return start1.isBefore(end2) && end1.isAfter(start2);
+    }
 
     @Transactional
     // drop enrollment -( student or ADMIN )
     public EnrollmentResponse drop(Long studentId, Long enrollmentId) {
         // verify enrollment exists
-        Enrollment enroll = enrollmentRepository.findById(enrollmentId).orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
+        Enrollment enroll = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found."));
 
         // Authentication context for role check
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -325,7 +375,8 @@ public class EnrollmentService {
 
     /**
      * Validates if a student can enroll in a section.
-     * Returns an error message if there's a conflict or capacity issue, otherwise null.
+     * Returns an error message if there's a conflict or capacity issue, otherwise
+     * null.
      */
     private String validateEnrollment(Student student, Section section) {
         // 1. Capacity Check
@@ -335,16 +386,19 @@ public class EnrollmentService {
 
         // 2. Schedule Conflict Check
         List<Enrollment> studentEnrollments = enrollmentRepository.findByStudent_StudentId(student.getStudentId());
-        
+
         for (Enrollment existing : studentEnrollments) {
             // Only consider active or pending enrollments for conflict checks
-            if (existing.getStatus() == Enrollment.Status.ENROLLED || existing.getStatus() == Enrollment.Status.PENDING) {
-                
-                // If the student is already in the same course, that might be a problem (depending on school policy)
+            if (existing.getStatus() == Enrollment.Status.ENROLLED
+                    || existing.getStatus() == Enrollment.Status.PENDING) {
+
+                // If the student is already in the same course, that might be a problem
+                // (depending on school policy)
                 // But specifically checking schedule overlaps:
                 if (existing.getSection().getSchedule() != null && section.getSchedule() != null) {
                     if (existing.getSection().getSchedule().conflictsWith(section.getSchedule())) {
-                        return String.format("Schedule conflict: '%s' overlaps with your existing enrollment in '%s' (%s)",
+                        return String.format(
+                                "Schedule conflict: '%s' overlaps with your existing enrollment in '%s' (%s)",
                                 section.getSectionCode(),
                                 existing.getSection().getCourse().getCode(),
                                 existing.getSection().getSectionCode());
@@ -352,7 +406,7 @@ public class EnrollmentService {
                 }
             }
         }
-        
+
         return null;
     }
 
