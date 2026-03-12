@@ -88,6 +88,10 @@
     isSubmittingBulk = true;
     
     try {
+      debugger
+
+      let studentID = data.user?.studentId || null
+      console.log("Enrolling student", studentID, "in sections", selectedSectionIds);
       const resp = await fetch('/api/enrollments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,7 +100,7 @@
           sectionIds: selectedSectionIds
         })
       });
-
+      debugger
       if (!resp.ok) {
         const err = await resp.json();
         throw new Error(err.message || "Failed to enroll");
@@ -106,7 +110,7 @@
       selectedSectionIds = [];
       showSummaryModal = false;
       // Optionally redirect to dashboard or refresh data
-      window.location.href = '/dashboard';
+      window.location.href = '/';
     } catch (err: any) {
       alert(err.message);
     } finally {
