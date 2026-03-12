@@ -439,28 +439,13 @@
 </div>
 
 <style>
-  :root {
-    --panel-bg: rgba(10, 22, 45, 0.85);
-    --panel-border: rgba(255, 255, 255, 0.07);
-    --input-bg: rgba(255, 255, 255, 0.04);
-    --input-border: rgba(255, 255, 255, 0.08);
-    --text-primary: #ffffff;
-    --text-muted: rgba(140, 170, 210, 0.55);
-    --text-label: rgba(80, 140, 255, 0.65);
-    --font-serif: "DM Serif Display", serif;
-    --font-sans: "DM Sans", sans-serif;
-  }
-
   .form-shell {
-    font-family: var(--font-sans);
-    background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    border-radius: 28px;
+    font-family: var(--font);
+    background: var(--surface-1);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow:
-      0 24px 64px rgba(0, 0, 0, 0.5),
-      0 1px 0 rgba(255, 255, 255, 0.06) inset;
-    backdrop-filter: blur(20px);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.1);
   }
 
   .form-header {
@@ -506,11 +491,10 @@
   }
 
   .form-title {
-    font-family: var(--font-serif);
-    font-style: italic;
+    font-family: var(--font);
     font-size: clamp(1.5rem, 3vw, 2rem);
-    font-weight: 400;
-    color: var(--text-primary);
+    font-weight: 800;
+    color: var(--text-hi);
     line-height: 1.05;
     letter-spacing: -0.02em;
     margin: 0;
@@ -518,7 +502,7 @@
 
   .form-subtitle {
     font-size: 0.78rem;
-    color: var(--text-muted);
+    color: var(--text-mid);
     margin: 0.5rem 0 0;
     line-height: 1.6;
   }
@@ -581,14 +565,14 @@
   .select-wrap select {
     width: 100%;
     appearance: none;
-    background: var(--input-bg);
-    border: 1px solid var(--input-border);
-    border-radius: 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius-sm);
     padding: 1rem 3rem 1rem 1.25rem;
-    font-family: var(--font-sans);
+    font-family: var(--font);
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--text-primary);
+    color: var(--text-hi);
     cursor: pointer;
     outline: none;
     transition:
@@ -608,8 +592,8 @@
     cursor: not-allowed;
   }
   .select-wrap select option {
-    background: #0c1c35;
-    color: #ffffff;
+    background: var(--surface-1);
+    color: var(--text-hi);
   }
 
   .select-caret {

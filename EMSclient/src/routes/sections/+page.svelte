@@ -355,14 +355,6 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
-  :global(body) {
-    margin: 0;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
-    overflow-x: hidden;
-  }
-
   /* MODAL */
   .modal-overlay {
     position: fixed;
@@ -539,9 +531,10 @@
   /* MAIN PAGE STYLES */
   .page {
     min-height: 100vh;
-    padding: 3rem 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
+    padding: 2.5rem 2rem;
+    background: var(--page-bg);
+    color: var(--text-hi);
+    font-family: var(--font);
   }
 
   .header {
@@ -572,17 +565,18 @@
   }
 
   .card {
-    background: #1e293b;
-    border: 1px solid rgba(148, 163, 184, 0.1);
-    border-radius: 20px;
+    background: var(--surface-1);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius-md);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
     cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     text-align: left;
     outline: none;
   }
@@ -619,7 +613,7 @@
     font-size: 1.1rem;
     font-weight: 700;
     line-height: 1.4;
-    color: #e2e8f0;
+    color: var(--text-hi);
   }
 
   .section-tag {
@@ -654,12 +648,12 @@
     font-size: 0.65rem;
     text-transform: uppercase;
     font-weight: 600;
-    color: #64748b;
+    color: var(--text-lo);
   }
 
   .stat span {
     font-size: 0.85rem;
-    color: #e2e8f0;
+    color: var(--text-hi);
   }
 
   .card-footer {
@@ -736,8 +730,8 @@
   }
 
   .checkbox-inner.checked {
-    background: #3b82f6;
-    border-color: #3b82f6;
+    background: var(--blue);
+    border-color: var(--blue);
   }
 
   .checkbox-inner svg {
@@ -750,8 +744,8 @@
     bottom: 2rem;
     left: 50%;
     transform: translateX(-50%);
-    background: #1e293b;
-    border: 1px solid rgba(148, 163, 184, 0.1);
+    background: var(--surface-2);
+    border: 1px solid var(--border-1);
     border-radius: 100px;
     padding: 0.75rem 1.5rem;
     display: flex;
@@ -808,7 +802,7 @@
   }
 
   .enroll-btn {
-    background: #2563eb;
+    background: var(--blue);
     color: white;
     border: none;
     padding: 0.6rem 1.25rem;
@@ -820,7 +814,8 @@
   }
 
   .enroll-btn:hover {
-    background: #1d4ed8;
+    background: var(--blue);
+    opacity: 0.9;
     transform: scale(1.02);
   }
 

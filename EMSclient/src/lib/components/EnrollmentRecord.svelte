@@ -30,26 +30,26 @@
     showDeleteModal = true;
   };
 
-const handleConfirmDelete = async () => {
-  isDeleting = true;
-  showDeleteModal = false;  // close modal immediately
-  isDisappearing = true;
+  const handleConfirmDelete = async () => {
+    isDeleting = true;
+    showDeleteModal = false; // close modal immediately
+    isDisappearing = true;
 
-  await new Promise((r) => setTimeout(r, 480));
+    await new Promise((r) => setTimeout(r, 480));
 
-  try {
-    if (onDelete) await onDelete(enrollment.enrollmentId);
-    const title = enrollment.section?.course?.title ?? "Course";
-    triggerToast(`✓ ${title} dropped!`);
-  } catch (error) {
-    const title = enrollment.section?.course?.title ?? "Course";
-    triggerToast(`❌ Failed to drop ${title}`);
-    isDisappearing = false; // 
-  } finally {
-    isDeleting = false;
-    isConfirming = false;
-  }
-};
+    try {
+      if (onDelete) await onDelete(enrollment.enrollmentId);
+      const title = enrollment.section?.course?.title ?? "Course";
+      triggerToast(`✓ ${title} dropped!`);
+    } catch (error) {
+      const title = enrollment.section?.course?.title ?? "Course";
+      triggerToast(`❌ Failed to drop ${title}`);
+      isDisappearing = false; //
+    } finally {
+      isDeleting = false;
+      isConfirming = false;
+    }
+  };
 
   const triggerToast = (msg: string) => {
     toastMessage = msg;
@@ -70,7 +70,7 @@ const handleConfirmDelete = async () => {
     try {
       if (onEnroll) await onEnroll(enrollment.enrollmentId);
       const title = enrollment.section?.course?.title ?? "Course";
-      triggerToast(`✓ ${title} confirmed!`); // ← only on success
+      triggerToast(`✓ ${title} confirmed!`);
     } finally {
       // Brief pause before reappear
       await new Promise((r) => setTimeout(r, 320));
@@ -444,39 +444,14 @@ const handleConfirmDelete = async () => {
 {/if}
 
 <style>
-  /* ── TOKENS ── */
-  :root {
-    --c-surface: rgba(10, 20, 44, 0.92);
-    --c-border: rgba(255, 255, 255, 0.07);
-    --c-border-hi: rgba(255, 255, 255, 0.12);
-    --c-text-1: #eef2ff;
-    --c-text-2: rgba(160, 190, 235, 0.65);
-    --c-text-3: rgba(100, 140, 205, 0.45);
-    --c-blue: #3d6ff8;
-    --c-blue-lo: rgba(61, 111, 248, 0.1);
-    --c-blue-mid: rgba(61, 111, 248, 0.22);
-    --c-green: #34d399;
-    --c-green-lo: rgba(52, 211, 153, 0.1);
-    --c-amber: #fbbf24;
-    --c-amber-lo: rgba(251, 191, 36, 0.1);
-    --c-red: #f87171;
-    --c-red-lo: rgba(248, 113, 113, 0.1);
-    --c-red-mid: rgba(248, 113, 113, 0.2);
-    --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
-    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --font: "Outfit", sans-serif;
-    --font-mono: "JetBrains Mono", monospace;
-  }
-
   /* ── CARD ── */
   .card {
     font-family: var(--font);
     position: relative;
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: 20px;
+    background: var(--surface-1);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius-md);
     overflow: hidden;
-    backdrop-filter: blur(16px);
     transition:
       border-color 0.25s ease,
       box-shadow 0.25s ease,
@@ -484,7 +459,7 @@ const handleConfirmDelete = async () => {
       opacity 0.42s var(--ease-out),
       scale 0.42s var(--ease-out),
       filter 0.42s var(--ease-out);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
   }
 
   /* ── DISAPPEAR EFFECT ── */
@@ -619,7 +594,7 @@ const handleConfirmDelete = async () => {
   .course-title {
     font-size: 1.05rem;
     font-weight: 700;
-    color: var(--c-text-1);
+    color: var(--text-hi);
     letter-spacing: -0.025em;
     line-height: 1.2;
     margin: 0;
@@ -631,7 +606,7 @@ const handleConfirmDelete = async () => {
   .course-desc {
     font-size: 0.75rem;
     font-weight: 300;
-    color: var(--c-text-2);
+    color: var(--text-mid);
     line-height: 1.55;
     margin: 0.3rem 0 0;
     display: -webkit-box;
@@ -709,9 +684,9 @@ const handleConfirmDelete = async () => {
     gap: 0.4rem;
     font-size: 0.65rem;
     font-weight: 400;
-    color: var(--c-text-2);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--c-border);
+    color: var(--text-mid);
+    background: var(--surface-2);
+    border: 1px solid var(--border-1);
     padding: 0.3rem 0.7rem;
     border-radius: 8px;
     letter-spacing: 0.02em;
@@ -755,14 +730,25 @@ const handleConfirmDelete = async () => {
 
   .btn-confirm {
     background: var(--c-blue);
-    color: #fff;
+    color: #5580fa;
+    background: #fff;
     box-shadow: 0 3px 14px rgba(61, 111, 248, 0.3);
   }
 
   .btn-confirm:not(:disabled):hover {
+    color: #fff;
     background: #5580fa;
     box-shadow: 0 5px 22px rgba(61, 111, 248, 0.45);
     transform: translateY(-1px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text-hi: #f8fafc;
+      --text-mid: #cbd5f5;
+      --surface-1: #0f172a;
+      --surface-2: #1e293b;
+    }
   }
 
   .btn-drop {
@@ -824,7 +810,7 @@ const handleConfirmDelete = async () => {
     border-radius: 8px;
     background: rgba(52, 211, 153, 0.14);
     border: 1px solid rgba(52, 211, 153, 0.25);
-    color: var(--c-green);
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;

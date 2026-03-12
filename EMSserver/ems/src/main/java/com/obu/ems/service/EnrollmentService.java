@@ -94,6 +94,7 @@ public class EnrollmentService {
         return enrollmentMapper.mapToEnrollmentResponse(enrollment);
     }
 
+    // only student can enroll on course 
     private Student getCurrentStudent() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {

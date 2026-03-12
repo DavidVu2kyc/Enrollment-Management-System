@@ -136,32 +136,28 @@
 
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
-  :global(body) {
-    margin: 0;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
-  }
-
   .page {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 2rem;
+    background: var(--page-bg);
+    color: var(--text-hi);
+    font-family: var(--font);
   }
 
   .card {
     width: 100%;
     max-width: 480px;
-    background: #1e293b;
-    border-radius: 16px;
+    background: var(--surface-1);
+    border-radius: var(--radius-md);
     padding: 2rem;
     display: flex;
     flex-direction: column;
     gap: 1.4rem;
-    border: 1px solid rgba(148,163,184,.1);
-    box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    border: 1px solid var(--border-1);
+    box-shadow: 0 20px 60px rgba(0,0,0,.15);
   }
 
   /* HEADER */
@@ -277,10 +273,10 @@
   input,
   .input-locked {
     padding: .6rem .8rem;
-    border-radius: 8px;
-    background: #0f172a;
-    border: 1px solid rgba(148,163,184,.15);
-    color: #e2e8f0;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border-1);
+    color: var(--text-hi);
     font-size: .85rem;
   }
 
