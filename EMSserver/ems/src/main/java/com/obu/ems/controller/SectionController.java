@@ -19,7 +19,7 @@ public class SectionController {
     private static final Logger logger = LoggerFactory.getLogger(SectionController.class);
     private final SectionService sectionService;
 
-    // list all sections- browse a list of section available
+    // list all sections- browse a list of section available    
     @GetMapping
     public ResponseEntity<List<SectionResponse>> getAllSections() {
         logger.info("Request received: Get all sections");

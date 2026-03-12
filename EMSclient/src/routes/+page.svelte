@@ -89,22 +89,22 @@
     }
   });
 
-
   // 1.  GET CAPACITY STATUS
   if (enrollmentsStore.all.length > 0) {
-  const totalCapacity = enrollmentsStore.all.reduce(
-    (acc: number, curr: any) => acc + (curr.section?.capacity ?? 0), 0
-  );
-  console.log(totalCapacity);
-  const totalEnrolled = enrollmentsStore.all.reduce(
-    (acc: number, curr: any) => acc + (curr.section?.enrolledCount ?? 0), 0
-  );
-  console.log(totalEnrolled);
-  
-  dashboardStats.capacityStatus = totalCapacity > 0
-    ? Math.round((totalEnrolled / totalCapacity) * 100)
-    : 0;
-}
+    const totalCapacity = enrollmentsStore.all.reduce(
+      (acc: number, curr: any) => acc + (curr.section?.capacity ?? 0),
+      0,
+    );
+    console.log(totalCapacity);
+    const totalEnrolled = enrollmentsStore.all.reduce(
+      (acc: number, curr: any) => acc + (curr.section?.enrolledCount ?? 0),
+      0,
+    );
+    console.log(totalEnrolled);
+
+    dashboardStats.capacityStatus =
+      totalCapacity > 0 ? Math.round((totalEnrolled / totalCapacity) * 100) : 0;
+  }
 
   // 2.  SHARED ACTION HELPER
 
@@ -130,7 +130,7 @@
     });
 
     if (result.type === "failure") {
-      // Roll back 
+      // Roll back
       enrollmentsStore.update(enrollmentId, { status: "PENDING" }); // rollback
       actionError =
         (result.data as any)?.message ?? "Failed to confirm enrollment";
@@ -368,22 +368,6 @@
 </div>
 
 <style>
-  /* ── TOKENS ── */
-  :root {
-    --page-bg: #040d1a;
-    --surface-1: rgba(12, 28, 55, 0.6);
-    --surface-2: rgba(255, 255, 255, 0.03);
-    --border-1: rgba(255, 255, 255, 0.06);
-    --border-2: rgba(255, 255, 255, 0.04);
-    --text-hi: #e2ecff;
-    --text-mid: rgba(148, 185, 255, 0.6);
-    --text-lo: rgba(96, 130, 200, 0.45);
-    --blue: #3b82f6;
-    --blue-glow: rgba(59, 130, 246, 0.15);
-    --font: "Syne", sans-serif;
-    --mono: "Geist Mono", monospace;
-  }
-
   /* ── PAGE WRAPPER ── */
   .page {
     min-height: 100vh;
@@ -502,14 +486,12 @@
 
   /* Hero right: system status widget */
   .status-widget {
-    background: rgba(12, 28, 55, 0.7);
+    background: var(--surface-1);
     border: 1px solid var(--border-1);
-    border-radius: 20px;
+    border-radius: var(--radius-md);
     padding: 1.25rem 1.5rem;
-    backdrop-filter: blur(16px);
     min-width: 240px;
     flex-shrink: 0;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .status-label {
@@ -556,7 +538,7 @@
 
   .progress-track {
     height: 3px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-2);
     border-radius: 99px;
     overflow: hidden;
     margin-bottom: 0.85rem;
@@ -565,8 +547,8 @@
   .progress-fill {
     height: 100%;
     border-radius: 99px;
-    background: linear-gradient(90deg, #1d4ed8, #3b82f6);
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+    background: var(--blue);
+    box-shadow: 0 0 8px var(--blue-glow);
     transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
@@ -588,12 +570,11 @@
   .stat-card {
     background: var(--surface-1);
     border: 1px solid var(--border-1);
-    border-radius: 20px;
+    border-radius: var(--radius-md);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    backdrop-filter: blur(16px);
     position: relative;
     overflow: hidden;
     transition:

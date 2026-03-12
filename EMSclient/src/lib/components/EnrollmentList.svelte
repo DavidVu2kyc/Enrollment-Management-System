@@ -154,20 +154,10 @@
 
 <style>
   .page {
-    font-family: "DM Sans", sans-serif;
+    font-family: var(--font);
     min-height: 100vh;
-    background-color: 
-#05101f;
-    background-image: radial-gradient(
-        ellipse 70% 50% at 10% -5%,
-        rgba(14, 60, 120, 0.45) 0%,
-        transparent 60%
-      ),
-      radial-gradient(
-        ellipse 50% 40% at 90% 100%,
-        rgba(8, 40, 90, 0.35) 0%,
-        transparent 60%
-      );
+    background: var(--page-bg);
+    color: var(--text-hi);
     padding: 2.5rem 2rem 5rem;
     position: relative;
     overflow-x: hidden;
@@ -224,12 +214,10 @@
   }
 
   h1 {
-    font-family: "DM Serif Display", serif;
-    font-style: italic;
+    font-family: var(--font);
     font-size: clamp(2rem, 4vw, 3.25rem);
-    font-weight: 400;
-    color: 
-#ffffff;
+    font-weight: 800;
+    color: var(--text-hi);
     line-height: 1.05;
     letter-spacing: -0.02em;
     margin: 0 0 0.6rem;
@@ -238,7 +226,7 @@
   .header-sub {
     font-size: 0.85rem;
     font-weight: 400;
-    color: rgba(160, 185, 220, 0.6);
+    color: var(--text-mid);
     max-width: 420px;
     line-height: 1.6;
     margin: 0;
@@ -348,7 +336,7 @@
   }
 
   .stat-num.confirmed {
-    color: 
+    color: #ffffff
 #4ade80;
   }
   .stat-num.pending {
@@ -358,21 +346,15 @@
 
   /* ── Controls ────────────────────────────────────── */
   .controls {
-    background: linear-gradient(
-      145deg,
-      rgba(12, 28, 55, 0.9),
-      rgba(7, 18, 38, 0.95)
-    );
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 20px;
+    background: var(--surface-1);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius-md);
     padding: 1.25rem 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
     margin-bottom: 2rem;
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: var(--blue-glow);
     animation: fadeUp 0.55s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
@@ -401,13 +383,12 @@
 
   .search-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius-sm);
     padding: 0.8rem 1rem 0.8rem 2.75rem;
-    color: 
-#e8f0ff;
-    font-family: "DM Sans", sans-serif;
+    color: var(--text-hi);
+    font-family: var(--font);
     font-size: 0.875rem;
     outline: none;
     transition: all 0.2s ease;
@@ -426,8 +407,8 @@
 
   .filter-pills {
     display: flex;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--surface-2);
+    border: 1px solid var(--border-1);
     border-radius: 12px;
     padding: 4px;
     gap: 2px;
@@ -455,11 +436,9 @@
   }
 
   .filter-pill.active {
-    background: linear-gradient(135deg, 
-#1e4db7, 
-#0f3298);
+    background: var(--blue);
     color: white;
-    box-shadow: 0 2px 12px rgba(30, 77, 183, 0.4);
+    box-shadow: 0 2px 12px rgba(30, 77, 183, 0.1);
   }
 
   /* ── Records grid ────────────────────────────────── */

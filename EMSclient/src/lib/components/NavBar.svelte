@@ -3,6 +3,7 @@
   import { page } from "$app/state";
   import { slide } from "svelte/transition";
   import { goto } from "$app/navigation";
+  import { themeStore } from "$lib/stores/theme.svelte";
   import { logout } from "$lib/auth";
 
   async function handleLogout() {
@@ -61,9 +62,10 @@
   ]);
 
   const filteredItems = $derived(
-    menuItems.filter((item) =>
-      item.roles.includes(userStore.current?.role ?? "STUDENT"),
-    ),
+    menuItems.filter((item) => {
+      const userRole = (userStore.current?.role ?? "STUDENT").replace("ROLE_", "");
+      return item.roles.includes(userRole);
+    }),
   );
 
   $effect(() => {
@@ -136,12 +138,53 @@
       <div class="chip">
         <div class="ucopy">
           <span class="uname">{userStore.current?.username ?? "Guest"}</span>
-          <span class="urole">{userStore.current?.role ?? ""}</span>
+          <span class="urole">{userStore.current?.role?.replace("ROLE_", "") ?? ""}</span>
         </div>
         <div class="av">
           {(userStore.current?.username ?? "U")[0].toUpperCase()}
         </div>
       </div>
+      <button 
+        class="theme-toggle" 
+        onclick={() => themeStore.toggle()} 
+        aria-label="Toggle theme"
+      >
+        {#if themeStore.isDark}
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        {:else}
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        {/if}
+      </button>
       <button class="logout-btn" onclick={handleLogout} aria-label="Logout">
         <svg
           width="14"
@@ -209,6 +252,44 @@
       {/each}
 
       <div class="msep"></div>
+      
+      <button class="ml theme-toggle-mobile" onclick={() => themeStore.toggle()}>
+        {#if themeStore.isDark}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <span class="ml-txt">Light Mode</span>
+        {:else}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span class="ml-txt">Dark Mode</span>
+        {/if}
+      </button>
+
+      <div class="msep"></div>
       <!-- write your logout button here -->
 
       <button class="ml mlogout" onclick={handleLogout}>
@@ -231,16 +312,6 @@
 </nav>
 
 <style>
-  :global(:root) {
-    --nf: "Syne", sans-serif;
-    --nbg: #0a0f1a;
-    --nbgs: #060b14;
-    --nbr: rgba(255, 255, 255, 0.07);
-    --nact: #1d4ed8;
-    --ntxt: rgba(148, 185, 255, 0.5);
-    --ntxth: #e2ecff;
-  }
-
   .nav-root {
     position: sticky;
     top: 0;
@@ -512,6 +583,29 @@
     border-color: rgba(239, 68, 68, 0.38);
     color: #f87171;
     transform: translateX(1px);
+  }
+
+  .theme-toggle {
+    display: flex;
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: var(--ntxth);
+    cursor: pointer;
+    transition:
+      background 0.18s,
+      border-color 0.18s,
+      color 0.18s,
+      transform 0.18s;
+  }
+  .theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.13);
+    transform: translateY(-1px);
   }
 
   /* Mobile */

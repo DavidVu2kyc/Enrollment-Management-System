@@ -1,5 +1,7 @@
 package com.obu.ems.dto;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,11 +11,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+public class BulkEnrollmentRequest {
 
-public class AuthResponse {
-    private String token;
-    private String tokenType = "Bearer";
-    private String username;
-    private String role;
     private Long studentId;
+    private List<Long> sectionIds;
 }

@@ -2,23 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand-navy: #05101f;
+  --brand-blue: #1e4db7;
+  --brand-accent: #60a5fa;
+
+  /* Light Theme Tokens */
+  --page-bg: #ffffff;
+  --surface-1: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --border-1: rgba(0, 0, 0, 0.08);
+  --border-2: rgba(0, 0, 0, 0.04);
+  --text-hi: #020617;
+  --text-mid: #475569;
+  --text-lo: #94a3b8;
+  
+  /* NavBar Specific (Light) */
+  --nbg: #ffffff;
+  --nbgs: #f8fafc;
+  --nbr: rgba(0, 0, 0, 0.06);
+  --nact: #2563eb;
+  --ntxt: #64748b;
+  --ntxth: #020617;
+
+  /* Global UI Colors */
+  --blue: #2563eb;
+  --blue-glow: rgba(37, 99, 235, 0.1);
+  --font: "Syne", sans-serif;
+  --mono: "Geist Mono", monospace;
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+
+.dark {
+  /* Dark Theme Tokens */
+  --page-bg: #020617;
+  --surface-1: #0f172a;
+  --surface-2: #1e293b;
+  --surface-3: #334155;
+  --border-1: rgba(255, 255, 255, 0.08);
+  --border-2: rgba(255, 255, 255, 0.04);
+  --text-hi: #f8fafc;
+  --text-mid: #94a3b8;
+  --text-lo: #475569;
+
+  /* NavBar Specific (Dark) */
+  --nbg: #020617;
+  --nbgs: #0f172a;
+  --nbr: rgba(255, 255, 255, 0.08);
+  --nact: #3b82f6;
+  --ntxt: #94a3b8;
+  --ntxth: #f8fafc;
+}
+
 @layer base {
-  :root {
-    --brand-navy: #05101f;
-    --brand-blue: #1e4db7;
-    --brand-accent: #60a5fa;
-  }
 
   body {
-    @apply antialiased bg-gray-50 text-gray-900 dark:bg-[#05101f] dark:text-gray-100;
-    font-family: "DM Sans", system-ui, sans-serif;
+    background: var(--page-bg);
+    color: var(--text-hi);
+    font-family: var(--font);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 100vh;
+    margin: 0;
   }
 
   h1,
   h2,
   h3,
   .serif {
-    font-family: "DM Serif Display", serif;
+    font-family: var(--font);
+    font-weight: 800;
   }
 }
 

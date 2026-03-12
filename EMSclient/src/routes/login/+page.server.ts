@@ -29,6 +29,7 @@ export const actions: Actions = {
         tokenType: string;
         username: string;
         role: string;
+        studentId: number | null;
       }>("/auth/login", {
         username,
         password,
@@ -47,6 +48,7 @@ export const actions: Actions = {
         JSON.stringify({
           username: response.username,
           role: response.role,
+          studentId: response.studentId,
         }),
         {
           path: "/",

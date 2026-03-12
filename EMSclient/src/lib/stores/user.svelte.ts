@@ -12,11 +12,13 @@ class UserStore {
 	}
 
 	get isAdmin() {
-		return this.#user?.role === 'ADMIN';
+		const role = this.#user?.role?.replace('ROLE_', '');
+		return role === 'ADMIN';
 	}
 
 	get isStudent() {
-		return this.#user?.role === 'STUDENT';
+		const role = this.#user?.role?.replace('ROLE_', '');
+		return role === 'STUDENT';
 	}
 
 	login(user: User) {

@@ -33,7 +33,6 @@ public class AuthService {
 
     private final ConcurrentHashMap<String, Long> blacklist = new ConcurrentHashMap<>();
 
-
     // login ( authenticate user and receive JWT token )
     public AuthResponse login(LoginRequest request) {
 
@@ -52,14 +51,24 @@ public class AuthService {
                 .findFirst().map(GrantedAuthority::getAuthority)
                 .orElse("STUDENT");
 
+        // Find studentId if user is a student
+        Long studentId = null;
+        if (role.contains("STUDENT")) {
+            User user = userRepository.findByUsername(request.getUsername())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            studentId = studentRepository.findByUser_UserId(user.getUserId())
+                    .map(Student::getStudentId)
+                    .orElse(null);
+        }
+
         AuthResponse response = AuthResponse.builder()
                 .token(jwtToken)
                 .username(request.getUsername())
                 .role(role)
+                .studentId(studentId)
                 .build();
 
         return response;
-
     }
 
     // register new account - a new pròile ( admin only )
@@ -136,6 +145,5 @@ public class AuthService {
         }
         return true;
     }
-
 
 }

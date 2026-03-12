@@ -30,8 +30,8 @@
     onclick={onClose}
     aria-label="Close modal"
   ></button>
-  <div class="modal-container" transition:scale={{ start: 0.95 }}>
-    <div class="modal-content">
+  <div class="modal-container" transition:scale={{ start: 10  }}>
+    <div class="modal-content">  
       <div class="header">
         <h2>Confirm Registration</h2>
         <p>Review your selected sections before finalizing enrollment.</p>
@@ -95,10 +95,10 @@
     transform: translate(-50%, -50%);
     width: 90%;
     max-width: 500px;
-    background: #1e293b;
-    border-radius: 20px;
-    border: 1px solid rgba(148, 163, 184, 0.1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    background: var(--surface-1);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
     z-index: 2001;
     overflow: hidden;
   }
@@ -115,7 +115,7 @@
   .header h2 {
     margin: 0;
     font-size: 1.5rem;
-    color: #f8fafc;
+    color: var(--text-hi);
   }
 
   .header p {
@@ -139,9 +139,9 @@
     max-height: 300px;
     overflow-y: auto;
     margin-bottom: 1.5rem;
-    border: 1px solid rgba(148, 163, 184, 0.1);
-    border-radius: 12px;
-    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
   }
 
   .section-item {
@@ -165,7 +165,7 @@
   .course-title {
     display: block;
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--text-hi);
     margin-bottom: 0.5rem;
   }
 
